@@ -119,7 +119,7 @@ $users.find(1);
 // $posts.last(5);
 
 // Where expressions, for instance:
-// $users.where({ age: 18 });                       // find users where age == 18
+$users.where({ age: 18 });                          // find users where age == 18
 // $users.where({ age: { gte: 18 } });              // find users where age >= 18
 // $users.where({ age: { gte: 12, lt: 18 } });      // find users where age >= 12 && age < 18
 // $users.where({ name: 'Max', age: { gt: 18 } });  // find users where name == 'Max' && age > 18
@@ -145,15 +145,15 @@ $users.find(1);
 // $users.find(1).posts.all();  // Undefined method exception
 
 // or if we want to find the user of the post (we don't need all() since the post only belongs to one specific user):
-// $posts.find(1).user;       // Still get undefined method exception
+// $posts.find(1).user;        // Still get undefined method exception
 
 // We need to create the relationship to generate those special query methods
-// UserModel.hasMany(PostModel, { foreignKey: 'user_id' });
-// PostModel.belongsTo(UserModel, { foreignKey: 'user_id' });
+$users.hasMany($posts, { foreignKey: 'user_id' });
+$posts.belongsTo($users, { foreignKey: 'user_id' });
 
 // You can then use:
-// $users.find(1).posts.all();
-// $posts.find(1).user;
+$users.find(1).posts();
+$posts.find(1).user();
 
 // If you want to rename the relationship in a more instinctive way, such as:
 // UserModel.hasMany(PostModel, { foreignKey: 'user_id', as: 'messages' });
