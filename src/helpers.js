@@ -3,6 +3,7 @@ module.exports = {
     switch(type) {
       case 'integer': return 'INTEGER';
       case 'string': return 'VARCHAR(255)';
+      case 'text': return 'TEXT';
       case 'boolean': return 'BOOLEAN';
       default:
         throw new Error(`No SQL type mapped to: ${type}`);
@@ -12,6 +13,7 @@ module.exports = {
     switch(type) {
       case 'integer': return `${value}`;
       case 'string': return `'${value}'`;
+      case 'text': return `'${value}'`;
       case 'boolean': return value ? 1 : 0;
       default:
         throw new Error(`No SQL type mapped to: ${type}`);

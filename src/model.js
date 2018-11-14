@@ -2,11 +2,15 @@ const config = require('./config');
 // const Records = require('./records');
 const Database = require('better-sqlite3');
 const _ = require('./helpers');
+const pluralize = require('pluralize');
 
 module.exports = class Model {
   constructor({ tableName, fields }) {
     this.__db_connection = new Database(config.DB_FILE);
     this.__table_name = tableName;
+    this.__capitialized_table_name = tableName.replace(/^\w/, c => c.toUpperCase());
+    this.__records_name = `${this.__capitialized_table_name}Records`;
+    this.__record_name = `${this.__capitialized_table_name}Record`;
     this.__fields = fields;
 
     this.__build_table_if_not_exist();
@@ -14,20 +18,55 @@ module.exports = class Model {
     this.__generate_sql_insert_expression = () => '';
     this.__define_sql_expression_methods();
 
+    /* Records Class for array kind structure */
+    // global[this.__records_name] = class extends Records {};
+    // this.Records = global[this.__records_name];
+
+    const fieldNames = fields.map(({ name }) => name);
+    global[this.__record_name] = class {
+      constructor(obj) {
+        this.id = obj.id;
+        this.created = obj.created;
+        this.updated = obj.updated;
+        fieldNames.forEach((name) => {
+          this[name] = obj[name];
+        });
+      }
+    };
+    this.Record = global[this.__record_name];
+
     process.on('exit', () => this.__db_connection.close());
     process.on('SIGINT', () => this.__db_connection.close());
     process.on('SIGHUP', () => this.__db_connection.close());
     process.on('SIGTERM', () => this.__db_connection.close());
   }
 
-  execute(expression) {
-    this.__db_connection.exec(expression);
-    console.log(`PROCESS: ${expression}`);
+  hasMany(model, options) {
+    const Record = global[this.__record_name];
+    const name = model.__table_name;
+    const { foreignKey } = options;
+
+    Record.prototype[name] = function() {
+      const { id } = this;
+      return model.where({ [foreignKey]: id });
+    };
   }
 
-  // query(expression, ...args) {
-  //   return this.__db_connection.prepare(expression).get(...args);
-  // }
+  belongsTo(model, options) {
+    const Record = global[this.__record_name];
+    const name = pluralize.singular(model.__table_name);
+    const { foreignKey } = options;
+
+    Record.prototype[name] = function() {
+      const { [foreignKey]: id } = this;
+      return model.find(id);
+    }
+  }
+
+  execute(expression) {
+    this.__db_connection.exec(expression);
+    // console.log(`PROCESS: ${expression}`);
+  }
 
   __define_sql_expression_methods() {
     const fields = this.__fields.map(({ name }) => name);
@@ -77,7 +116,16 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
     return this.__db_connection.prepare(`SELECT * from ${this.__table_name}`).all();
   }
 
+  /* TODO: Implement more detail */
+  where(options) {
+    const fields = Object.keys(options);
+    const value = options[fields[0]];
+    return this.__db_connection.prepare(`SELECT * from ${this.__table_name} WHERE ${fields[0]} = ?`).all(value);
+  }
+
   find(id) {
-    return this.__db_connection.prepare(`SELECT * from ${this.__table_name} WHERE id = ?`, id).get(id);
+    return new this.Record(
+      this.__db_connection.prepare(`SELECT * from ${this.__table_name} WHERE id = ?`, id).get(id)
+    );
   }
 }
