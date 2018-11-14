@@ -113,10 +113,10 @@ const allUsers = $users.all();
 $users.find(1);
 
 // Find first several rows of record, for instance, find the first five posts:
-// $posts.first(5);
+$posts.first(5);
 
 // Find last several rows of record, for instance, find the last five posts:
-// $posts.last(5);
+$posts.last(5);
 
 // Where expressions, for instance:
 $users.where({ age: 18 });                          // find users where age == 18

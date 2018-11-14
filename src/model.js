@@ -113,19 +113,27 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   }
 
   all() {
-    return this.__db_connection.prepare(`SELECT * from ${this.__table_name}`).all();
+    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name}`).all();
+  }
+
+  first(counts = 1) {
+    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} LIMIT ${counts}`).all();
+  }
+
+  last(counts = 1) {
+    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} ORDER BY id DESC LIMIT ${counts}`).all().reverse();
   }
 
   /* TODO: Implement more detail */
   where(options) {
     const fields = Object.keys(options);
     const value = options[fields[0]];
-    return this.__db_connection.prepare(`SELECT * from ${this.__table_name} WHERE ${fields[0]} = ?`).all(value);
+    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE ${fields[0]} = ?`).all(value);
   }
 
   find(id) {
     return new this.Record(
-      this.__db_connection.prepare(`SELECT * from ${this.__table_name} WHERE id = ?`, id).get(id)
+      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE id = ?`, id).get(id)
     );
   }
 }
