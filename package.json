@@ -1,0 +1,9 @@
+{
+  "name": "strata-js",
+  "version": "1.0.0",
+  "description": "An ORM infrastructure design relative to Rails' ActiveRecord",
+  "main": "strata.js",
+  "repository": "git@github.com:Maxwell-Alexius/StrataJS.git",
+  "author": "Maxwell Alexius <destinydragon85614@gmail.com>",
+  "license": "MIT"
+}
