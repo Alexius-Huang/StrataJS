@@ -28,7 +28,7 @@ class UserModel extends Strata.Model {
     this.tableName = 'users';
     this.fields = [
       { name: 'name',    type: String,  required: true },
-      { name: 'account', type: String,  required: true, unique: true  }
+      { name: 'account', type: String,  required: true, unique: true },
       { name: 'age',     type: Number,  default: null },
       { name: 'married', type: Boolean, required: true, default: false }
     ];
