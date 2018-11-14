@@ -1,5 +1,5 @@
 const config = require('./config');
-// const Records = require('./records');
+const Records = require('./records');
 const Database = require('better-sqlite3');
 const _ = require('./helpers');
 const pluralize = require('pluralize');
@@ -19,8 +19,8 @@ module.exports = class Model {
     this.__define_sql_expression_methods();
 
     /* Records Class for array kind structure */
-    // global[this.__records_name] = class extends Records {};
-    // this.Records = global[this.__records_name];
+    global[this.__records_name] = class extends Records {};
+    this.Records = global[this.__records_name];
 
     const fieldNames = fields.map(({ name }) => name);
     global[this.__record_name] = class {
@@ -113,22 +113,30 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   }
 
   all() {
-    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name}`).all();
+    return new this.Records(
+      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name}`).all()
+    );
   }
 
   first(counts = 1) {
-    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} LIMIT ${counts}`).all();
+    return new this.Records(
+      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} LIMIT ${counts}`).all()
+    );
   }
 
   last(counts = 1) {
-    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} ORDER BY id DESC LIMIT ${counts}`).all().reverse();
+    return new this.Records(
+      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} ORDER BY id DESC LIMIT ${counts}`).all().reverse()
+    );
   }
 
   /* TODO: Implement more detail */
   where(options) {
     const fields = Object.keys(options);
     const value = options[fields[0]];
-    return this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE ${fields[0]} = ?`).all(value);
+    return new this.Records(
+      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE ${fields[0]} = ?`).all(value)
+    );
   }
 
   find(id) {

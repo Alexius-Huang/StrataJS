@@ -126,14 +126,14 @@ $users.where({ age: 18 });                          // find users where age == 1
 // $users.where({ age: { ne: 18 } });               // find users where age != 18
 
 // Limit expressions, for instance:
-// $users.where({ age: { gte: 18 } }).limit(10);    // find at most 10 users where age >= 18
+$users.where({ age: { gte: 18 } }).limit(10);       // find at most 10 users where age >= 18
 
 // Sort expressions, for instance:
 // allUsers.sort({ id: 'DESC' });               // find all users sorted by ID in descending order
 // allUsers.sort({ age: 'ASC' });               // find all users sorted by age in ascending order
 // allUsers.sort({ age: 'ASC', id: 'DESC' });   // find all users first sorted by age in ascending order
                                                 // then sort ID in descending order
-// allUsers.sort((a, b) => a.age > b.age);      // find all users sorted by age in descending order
+allUsers.sort((a, b) => a.age > b.age);         // find all users sorted by age in descending order
 
 // Pluck expressions, get specific column value of the queried records:
 // allUsers.pluck('name');                      // get an array of names of the user records
