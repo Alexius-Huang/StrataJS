@@ -140,13 +140,6 @@ $users.where({ age: 18 });                          // find users where age == 1
 // allUsers.pluck(['name']);                    // same as above
 // allUsers.pluck(['name', 'age']);             // get an array of pair of name and age (in array format) of the user records
 
-// After creates the relationship, the usable queries generated:
-// For instance, if we want to get the posts of the specific user, we may attempt:
-// $users.find(1).posts.all();  // Undefined method exception
-
-// or if we want to find the user of the post (we don't need all() since the post only belongs to one specific user):
-// $posts.find(1).user;        // Still get undefined method exception
-
 // We need to create the relationship to generate those special query methods
 $users.hasMany($posts, { foreignKey: 'user_id' });
 $posts.belongsTo($users, { foreignKey: 'user_id' });
@@ -191,4 +184,30 @@ $users.create({ name: 'Maxwell', age: 18, married: false });
 // $users.where({ updated: { lte: Strata.Time(1).month.ago } }).destroy();
 // Delete user which havn't been active one month ago (Strata.Time is a pseudo helper function which
 // should can be implement later)
+
+// Relational Creation
+// Notice that we assume you've already done creating relationships:
+// $users.find(1).createPost({ title: '...', content: '...' });
+
+// Relational Update
+// You can just update the record when you've already fetched
+// $posts.find(1).user().update({ name: '...', age: '...', ... });
+
+// Relational Mutation
+// $posts.find(1).user().mutate((user) => {
+//   user.name = 'Alexius';
+//   return user;
+// });
+
+// Relational Batch Mutation
+// $users.find(1).posts().mutate((post) => {
+//   post.title = '...';
+//   return post;
+// });
+
+// Relational Destruction
+// $posts.find(1).user().destroy();
+
+// Relational Batch Destruction
+// $users.find(1).posts().destroy();
 ```
