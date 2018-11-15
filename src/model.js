@@ -27,16 +27,6 @@ module.exports = class Model {
     this.__record_name = `${this.__capitialized_table_name}Record`;
     this.__fields = fields;
 
-    this.__field_names = fields
-      .map(({ name }) => name)
-      .concat(['created', 'updated', 'id']);
-    this.__field_name_map_types = Object.assign(
-      fields.reduce(
-        (acc, { name, type }) => Object.assign(acc, { [name]: type }), {}
-      ),
-      { created: 'timestamp', updated: 'timestamp', id: 'integer' }
-    );
-
     this.__build_table_if_not_exist();
 
     this.__generate_sql_insert_expression = () => '';
@@ -135,15 +125,13 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
     const {
       __db_connection,
       __table_name,
-      __field_name_map_types,
-      __field_names,
+      __fields,
       Records
     } = this;
     const query = mutation(new Query({
       __db_connection,
       __table_name,
-      __field_name_map_types,
-      __field_names,
+      __fields,
       Records,
     }));
 

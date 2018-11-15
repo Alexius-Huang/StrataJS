@@ -6,11 +6,20 @@ module.exports = class Query {
     this.__limit = -1;
     this.__limitBeginning = true;
 
-    this.__field_names = params.__field_names;
-    this.__field_name_map_types = params.__field_name_map_types;
+    this.__fields = params.__fields;
     this.__table_name = params.__table_name;
     this.__db_connection = params.__db_connection;
     this.Records = params.Records;
+
+    this.__field_names = this.__fields
+      .map(({ name }) => name)
+      .concat(['created', 'updated', 'id']);
+    this.__field_name_map_types = Object.assign(
+      this.__fields.reduce(
+        (acc, { name, type }) => Object.assign(acc, { [name]: type }), {}
+      ),
+      { created: 'timestamp', updated: 'timestamp', id: 'integer' }
+    );
 
     this.__base_sql = `SELECT * FROM ${this.__table_name}`;
   }

@@ -5,4 +5,6 @@ module.exports = {
 
   VARCHAR(value) { return ['varchar', value] },
   TEXT: 'text',
+
+  TIMESTAMP: 'timestamp',
 };
