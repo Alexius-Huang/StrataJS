@@ -177,6 +177,19 @@ $posts.find(1).user();
 // Creation
 $users.create({ name: 'Maxwell', age: 18, married: false });
 
+// New
+// const u = $users.new();
+// u.saved // false
+
+// u.save() // Error: Name, Account and Married is Required
+
+// u.name = 'Maxwell';
+// u.age = 18;
+// u.married = false;
+
+// u.save();
+// u.saved; // true
+
 // Update - Similar to HTTP verb PUT
 // $users.find(1).update({ name: 'Maximilian', age: 18, married: false });
 
