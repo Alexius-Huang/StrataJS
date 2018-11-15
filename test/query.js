@@ -193,3 +193,8 @@ test('Model#belongsTo relationship', t => {
   const user = $posts.find(1).user;
   t.is(user.id, 2);
 });
+
+test('Model#hasMany & Model#belongsTo Cyclic Behaviour', t => {
+  const user = $users.find(1).posts.evaluate()[0].user;
+  t.is(user.id, 1);
+});

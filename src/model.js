@@ -35,8 +35,6 @@ module.exports = class Model {
     this.__has_many = [];
     this.__belongs_to = [];
 
-    this.__records_handler = {};
-    this.Records = RecordsConstructor(this.__records_handler);
     this.Record = RecordConstructor({
       get: (obj, prop) => {
         for (let i = 0; i < this.__has_many.length; i += 1) {
@@ -58,6 +56,16 @@ module.exports = class Model {
         return obj[prop];
       },
     });
+
+    this.__records_handler = {
+      get: (obj, prop) => {
+        if (/^\+?(0|[1-9]\d*)$/.test(prop)) {
+          return this.Record(obj[prop]);
+        }
+        return obj[prop];
+      },
+    };
+    this.Records = RecordsConstructor(this.__records_handler);
 
     process.on('exit', () => this.__db_connection.close());
     process.on('SIGINT', () => this.__db_connection.close());
