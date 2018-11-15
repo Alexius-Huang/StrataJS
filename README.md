@@ -121,11 +121,11 @@ $posts.first(5);
 $posts.last(5);
 
 // Where expressions, for instance:
-$users.where({ age: 18 });                          // find users where age == 18
-// $users.where({ age: { gte: 18 } });              // find users where age >= 18
-// $users.where({ age: { gte: 12, lt: 18 } });      // find users where age >= 12 && age < 18
-// $users.where({ name: 'Max', age: { gt: 18 } });  // find users where name == 'Max' && age > 18
-// $users.where({ age: { ne: 18 } });               // find users where age != 18
+$users.where({ age: 18 });                       // find users where age == 18
+$users.where({ age: { gte: 18 } });              // find users where age >= 18
+$users.where({ age: { gte: 12, lt: 18 } });      // find users where age >= 12 && age < 18
+$users.where({ name: 'Max', age: { gt: 18 } });  // find users where name == 'Max' && age > 18
+$users.where({ age: { ne: 18 } });               // find users where age != 18
 
 // Limit expressions, for instance:
 $users.where({ age: { gte: 18 } }).limit(10);       // find at most 10 users where age >= 18

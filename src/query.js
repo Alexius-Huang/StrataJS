@@ -1,5 +1,10 @@
 const Types = require('./types');
 
+const comparableTypes = [
+  Types.INTEGER,
+  Types.TIMESTAMP,
+];
+
 module.exports = class Query {
   constructor(params) {
     this.__whereExpr = [];
@@ -51,12 +56,30 @@ module.exports = class Query {
         const type = this.__field_name_map_types[fieldName];
         const value = options[fields[i]];
 
+        /* Comparison */
         if (typeof value === 'object') {
-          console.warn(`Currently comparison is unsupported`);
-          continue;
+          if (comparableTypes.includes(type)) {
+            const operators = Object.keys(value);
+            operators.forEach((op) => {
+              if (op === 'gt') {
+                exprs.push(`${fieldName} > ${value.gt}`);
+              } else if (op === 'lt') {
+                exprs.push(`${fieldName} < ${value.lt}`);
+              } else if (op === 'gte') {
+                exprs.push(`${fieldName} >= ${value.gte}`);
+              } else if (op === 'lte') {
+                exprs.push(`${fieldName} <= ${value.lte}`);
+              } else if (op === 'ne') {
+                exprs.push(`${fieldName} != ${value.ne}`);
+              }  
+            });
+          } else {
+            throw new Error(`Type \`${type}\` is uncomparable in Where expression`);
+          }
         }
-
-        if ([Types.STRING, Types.TEXT].includes(type)) {
+        
+        /* Equality Comparison */
+        else if ([Types.STRING, Types.TEXT].includes(type)) {
           exprs.push(`${fieldName} = '${value}'`);
         } else {
           exprs.push(`${fieldName} = ${value}`);

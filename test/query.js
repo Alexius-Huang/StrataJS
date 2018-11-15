@@ -97,6 +97,46 @@ test('Model#where OR Chain', t => {
   t.is(threeUsers[2].id, 8);
 });
 
+test('Model#where comparison', t => {
+  const users1 = $users.where({ age: { gt: 25 } }).evaluate();
+  t.is(users1.length, 2);
+  t.is(users1[0].age, 27);
+  t.is(users1[1].age, 30);
+
+  const users2 = $users.where({ age: { gt: 27 } }).evaluate();
+  t.is(users2.length, 1);
+  t.is(users2[0].age, 30);
+
+  const users3 = $users.where({ age: { gte: 27 } }).evaluate();
+  t.is(users3.length, 2);
+  t.is(users3[0].age, 27);
+  t.is(users3[1].age, 30);
+
+  const users4 = $users.where({ age: { lt: 21, gte: 12 } }).evaluate();
+  t.is(users4.length, 3);
+  t.is(users4[0].age, 12);
+  t.is(users4[1].age, 15);
+  t.is(users4[2].age, 18);
+
+  const users5 = $users.where({ age: { lte: 24, gt: 18 } }).evaluate();
+  t.is(users5.length, 2);
+  t.is(users5[0].age, 21);
+  t.is(users5[1].age, 24);
+
+  const users6 = $users.where({ age: { lt: 18, gt: 21 } }).evaluate();
+  t.is(users6.length, 0);
+
+  const users7 = $users.where({ age: { lt: 15, gte: 3, ne: 9 } }).evaluate();
+  t.is(users7.length, 3);
+  t.is(users7[0].age, 3);
+  t.is(users7[1].age, 6);
+  t.is(users7[2].age, 12);
+
+  const users8 = $users.where({ age: { gt: 18 }, account: 'maxwell-9' }).evaluate();
+  t.is(users8.length, 1);
+  t.is(users8[0].age, 27);
+});
+
 test('Model#where AND Chain', t => {
   const posts = $posts.where({ user_id: 1, id: 48 }).evaluate();
   const noPost = $posts.where({ user_id: 1, id: 47 }).evaluate();
