@@ -2,7 +2,8 @@ const Database = require('better-sqlite3');
 const pluralize = require('pluralize');
 const config = require('./config');
 const Records = require('./records');
-const Types = require('./types');
+const Query = require('./query');
+// const Types = require('./types');
 const _ = require('./helpers');
 
 module.exports = class Model {
@@ -130,6 +131,25 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
     this.execute(sql);
   }
 
+  __return_query_object(mutation) {
+    const {
+      __db_connection,
+      __table_name,
+      __field_name_map_types,
+      __field_names,
+      Records
+    } = this;
+    const query = mutation(new Query({
+      __db_connection,
+      __table_name,
+      __field_name_map_types,
+      __field_names,
+      Records,
+    }));
+
+    return query;
+  }
+
   create(obj) {
     const sql = this.__generate_sql_insert_expression(obj);
     this.execute(sql);
@@ -141,49 +161,32 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
     );
   }
 
-  first(counts = 1) {
-    return new this.Records(
-      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} LIMIT ${counts}`).all()
-    );
+  first(counts) {
+    return this.__return_query_object((q) => {
+      q.first(counts);
+      return q;
+    });
   }
 
-  last(counts = 1) {
-    return new this.Records(
-      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} ORDER BY id DESC LIMIT ${counts}`).all().reverse()
-    );
+  limit(counts) {
+    return this.__return_query_object((q) => {
+      q.limit(counts);
+      return q;
+    });
   }
 
-  /* TODO: Implement more detail */
+  last(counts) {
+    return this.__return_query_object((q) => {
+      q.last(counts);
+      return q;
+    });
+  }
+
   where(options) {
-    const fields = Object.keys(options);
-    const sqlExpr = [];
-
-    for (let i = 0; i < fields.length; i += 1) {
-      const fieldName = fields[i];
-      if (this.__field_names.includes(fieldName)) {
-        const type = this.__field_name_map_types[fieldName];
-        const value = options[fields[i]];
-
-        if (typeof value === 'object') {
-          console.warn(`Currently comparison is unsupported`);
-          continue;
-        }
-
-        if ([Types.STRING, Types.TEXT].includes(type)) {
-          sqlExpr.push(`${fieldName} = '${value}'`);
-        } else {
-          sqlExpr.push(`${fieldName} = ${value}`);
-        }
-      } else {
-        throw new Error(`Field name \`${fieldName}\` not exist`);
-      }
-    }
-
-    const sql = sqlExpr.join(' AND ');
-
-    return new this.Records(
-      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE ${sql}`).all()
-    );
+    return this.__return_query_object((q) => {
+      q.where(options);
+      return q;
+    });
   }
 
   find(id) {
