@@ -2,7 +2,7 @@ const Database = require('better-sqlite3');
 const pluralize = require('pluralize');
 const config = require('./config');
 const Query = require('./query');
-// const Types = require('./types');
+const Types = require('./types');
 const _ = require('./helpers');
 
 const RecordConstructor = handler => value => new Proxy(value, handler);
@@ -26,6 +26,10 @@ module.exports = class Model {
     this.__table_name = tableName;
     this.__capitialized_table_name = tableName.replace(/^\w/, c => c.toUpperCase());
     this.__fields = fields;
+    this.__field_names = fields.map(({ name }) => name);
+    this.__field_name_map_types = fields.reduce(
+      (acc, { name, type }) => Object.assign(acc, { [name]: type }), {}
+    );
 
     this.__build_table_if_not_exist();
 
@@ -53,19 +57,26 @@ module.exports = class Model {
           }
         }
 
+        if (this.__field_names.includes(prop)) {
+          const type = this.__field_name_map_types[prop];
+          if (type === Types.BOOLEAN) {
+            return obj[prop] === 1 ? true : false;
+          }
+        }
+        
         return obj[prop];
       },
     });
 
-    this.__records_handler = {
+    this.Records = RecordsConstructor({
       get: (obj, prop) => {
+        /* Accessing Records with index will return wrapped Record object */
         if (/^\+?(0|[1-9]\d*)$/.test(prop)) {
           return this.Record(obj[prop]);
         }
         return obj[prop];
       },
-    };
-    this.Records = RecordsConstructor(this.__records_handler);
+    });
 
     process.on('exit', () => this.__db_connection.close());
     process.on('SIGINT', () => this.__db_connection.close());
@@ -95,14 +106,16 @@ module.exports = class Model {
     const sqlColumns = fields.join(', ');
     const now = Date.now();
 
-    this.__generate_sql_insert_expression = (obj) => `
+    this.__generate_sql_insert_expression = (obj) => ({
+      sql: `
 INSERT INTO ${this.__table_name} (${sqlColumns}, created, updated)
 VALUES (${
   this.__fields
     .map(({ name, type }) => _.mapValues(type, obj[name]))
     .join(', ')
-}, ${now}, ${now})
-    `;
+}, ${now}, ${now})`,
+      timestamp: now,
+    });
   }
 
   __build_table_if_not_exist() {
@@ -134,21 +147,23 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
       __db_connection,
       __table_name,
       __fields,
-      __records_handler,
+      Records,
     } = this;
     const query = mutation(new Query({
       __db_connection,
       __table_name,
       __fields,
-      Records: RecordsConstructor(__records_handler),
+      Records,
     }));
 
     return query;
   }
 
   create(obj) {
-    const sql = this.__generate_sql_insert_expression(obj);
-    this.execute(sql);
+    const { sql, timestamp } = this.__generate_sql_insert_expression(obj);
+    const { lastInsertRowid: id } = this.__db_connection.prepare(sql).run();
+
+    return this.Record({ ...obj, id, created: timestamp, updated: timestamp });
   }
 
   all() {
