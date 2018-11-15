@@ -25,15 +25,17 @@ import Strata from 'strata';
  *  Strata.hooks.afterCommit   = function() {}
  **/
 
+const { INTEGER, STRING, BOOLEAN, TEXT } = Strata.Types;
+
 class UserModel extends Strata.Model {
   constructor() {
     super({
       tableName: 'users',
       fields: [
-        { name: 'name',    type: String,  required: true },
-        { name: 'account', type: String,  required: true, unique: true },
-        { name: 'age',     type: Number,  default: null },
-        { name: 'married', type: Boolean, required: true, default: false }
+        { name: 'name',    type: STRING,  required: true },
+        { name: 'account', type: STRING,  required: true, unique: true },
+        { name: 'age',     type: INTEGER,  default: null },
+        { name: 'married', type: BOOLEAN, required: true, default: false }
       ]
     });
     /**
@@ -89,9 +91,9 @@ class PostModel extends Strata.Model {
     super({
       tableName: 'posts',
       fields: [
-        { name: 'title',   type: String, required: true },
-        { name: 'content', type: String, default: 'Content of $title' },
-        { name: 'user_id', type: Strata.Reference(UserModel), required: true }
+        { name: 'title',   type: STRING, required: true },
+        { name: 'content', type: STRING, default: 'Content of $title' },
+        { name: 'user_id', type: INTEGER, required: true }
       ]
     });
     // In content field, there is a template formatted value which interpolates the value of title field

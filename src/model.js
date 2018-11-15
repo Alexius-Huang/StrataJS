@@ -1,10 +1,23 @@
+const Database = require('better-sqlite3');
+const pluralize = require('pluralize');
 const config = require('./config');
 const Records = require('./records');
-const Database = require('better-sqlite3');
+const Types = require('./types');
 const _ = require('./helpers');
-const pluralize = require('pluralize');
 
 module.exports = class Model {
+  /*
+   *  Type fields :: [
+   *    {
+   *      name:String
+   *      type:String
+   *      required:Boolean
+   *      default:Any
+   *      unique:Boolean
+   *    }
+   *  ]
+   */
+
   constructor({ tableName, fields }) {
     this.__db_connection = new Database(config.DB_FILE);
     this.__table_name = tableName;
@@ -12,6 +25,16 @@ module.exports = class Model {
     this.__records_name = `${this.__capitialized_table_name}Records`;
     this.__record_name = `${this.__capitialized_table_name}Record`;
     this.__fields = fields;
+
+    this.__field_names = fields
+      .map(({ name }) => name)
+      .concat(['created', 'updated', 'id']);
+    this.__field_name_map_types = Object.assign(
+      fields.reduce(
+        (acc, { name, type }) => Object.assign(acc, { [name]: type }), {}
+      ),
+      { created: 'timestamp', updated: 'timestamp', id: 'integer' }
+    );
 
     this.__build_table_if_not_exist();
 
@@ -133,9 +156,33 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   /* TODO: Implement more detail */
   where(options) {
     const fields = Object.keys(options);
-    const value = options[fields[0]];
+    const sqlExpr = [];
+
+    for (let i = 0; i < fields.length; i += 1) {
+      const fieldName = fields[i];
+      if (this.__field_names.includes(fieldName)) {
+        const type = this.__field_name_map_types[fieldName];
+        const value = options[fields[i]];
+
+        if (typeof value === 'object') {
+          console.warn(`Currently comparison is unsupported`);
+          continue;
+        }
+
+        if ([Types.STRING, Types.TEXT].includes(type)) {
+          sqlExpr.push(`${fieldName} = '${value}'`);
+        } else {
+          sqlExpr.push(`${fieldName} = ${value}`);
+        }
+      } else {
+        throw new Error(`Field name \`${fieldName}\` not exist`);
+      }
+    }
+
+    const sql = sqlExpr.join(' AND ');
+
     return new this.Records(
-      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE ${fields[0]} = ?`).all(value)
+      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE ${sql}`).all()
     );
   }
 
