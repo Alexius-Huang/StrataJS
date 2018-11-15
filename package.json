@@ -6,6 +6,9 @@
   "repository": "git@github.com:Maxwell-Alexius/StrataJS.git",
   "author": "Maxwell Alexius <destinydragon85614@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "test": "ava"
+  },
   "dependencies": {
     "better-sqlite3": "^5.0.1",
     "pluralize": "^7.0.0"

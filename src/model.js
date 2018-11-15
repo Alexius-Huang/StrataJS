@@ -43,8 +43,8 @@ module.exports = class Model {
     this.__define_sql_expression_methods();
 
     /* Records Class for array kind structure */
-    global[this.__records_name] = class extends Records {};
-    this.Records = global[this.__records_name];
+    // global[this.__records_name] = class extends Records {};
+    this.Records = Records;
 
     const fieldNames = fields.map(({ name }) => name);
     global[this.__record_name] = class {
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   }
 
   all() {
-    return new this.Records(
+    return this.Records(
       this.__db_connection.prepare(`SELECT * FROM ${this.__table_name}`).all()
     );
   }

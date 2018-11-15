@@ -92,9 +92,9 @@ module.exports = class Query {
   evaluate() {
     const results = this.__db_connection.prepare(`${this.__base_sql} ${this.parse()}`).all();
     if (this.__limitBeginning) {
-      return new this.Records(results);
+      return this.Records(results);
     } else {
-      return new this.Records(results.reverse());    
+      return this.Records(results.reverse());    
     }
   }
 }
