@@ -1,10 +1,12 @@
 const Database = require('better-sqlite3');
 const pluralize = require('pluralize');
 const config = require('./config');
-const Records = require('./records');
 const Query = require('./query');
 // const Types = require('./types');
 const _ = require('./helpers');
+
+const RecordConstructor = handler => value => new Proxy(value, handler);
+const RecordsConstructor = handler => value => new Proxy(value, handler);
 
 module.exports = class Model {
   /*
@@ -23,8 +25,6 @@ module.exports = class Model {
     this.__db_connection = new Database(config.DB_FILE);
     this.__table_name = tableName;
     this.__capitialized_table_name = tableName.replace(/^\w/, c => c.toUpperCase());
-    this.__records_name = `${this.__capitialized_table_name}Records`;
-    this.__record_name = `${this.__capitialized_table_name}Record`;
     this.__fields = fields;
 
     this.__build_table_if_not_exist();
@@ -32,22 +32,32 @@ module.exports = class Model {
     this.__generate_sql_insert_expression = () => '';
     this.__define_sql_expression_methods();
 
-    /* Records Class for array kind structure */
-    // global[this.__records_name] = class extends Records {};
-    this.Records = Records;
+    this.__has_many = [];
+    this.__belongs_to = [];
 
-    const fieldNames = fields.map(({ name }) => name);
-    global[this.__record_name] = class {
-      constructor(obj) {
-        this.id = obj.id;
-        this.created = obj.created;
-        this.updated = obj.updated;
-        fieldNames.forEach((name) => {
-          this[name] = obj[name];
-        });
-      }
-    };
-    this.Record = global[this.__record_name];
+    this.__records_handler = {};
+    this.Records = RecordsConstructor(this.__records_handler);
+    this.Record = RecordConstructor({
+      get: (obj, prop) => {
+        for (let i = 0; i < this.__has_many.length; i += 1) {
+          const { name, foreignKey, model } = this.__has_many[i];
+          if (name === prop) {
+            const { id } = obj;
+            return model.where({ [foreignKey]: id });
+          }
+        }
+
+        for (let i = 0; i < this.__belongs_to.length; i += 1) {
+          const { name, foreignKey, model } = this.__belongs_to[i];
+          if (name === prop) {
+            const id = obj[foreignKey];
+            return model.find(id);
+          }
+        }
+
+        return obj[prop];
+      },
+    });
 
     process.on('exit', () => this.__db_connection.close());
     process.on('SIGINT', () => this.__db_connection.close());
@@ -56,25 +66,15 @@ module.exports = class Model {
   }
 
   hasMany(model, options) {
-    const Record = global[this.__record_name];
     const name = model.__table_name;
     const { foreignKey } = options;
-
-    Record.prototype[name] = function() {
-      const { id } = this;
-      return model.where({ [foreignKey]: id });
-    };
+    this.__has_many.push({ name, foreignKey, model });
   }
 
   belongsTo(model, options) {
-    const Record = global[this.__record_name];
     const name = pluralize.singular(model.__table_name);
     const { foreignKey } = options;
-
-    Record.prototype[name] = function() {
-      const { [foreignKey]: id } = this;
-      return model.find(id);
-    }
+    this.__belongs_to.push({ name, foreignKey, model });
   }
 
   execute(expression) {
@@ -126,13 +126,13 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
       __db_connection,
       __table_name,
       __fields,
-      Records
+      __records_handler,
     } = this;
     const query = mutation(new Query({
       __db_connection,
       __table_name,
       __fields,
-      Records,
+      Records: RecordsConstructor(__records_handler),
     }));
 
     return query;
@@ -144,9 +144,8 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   }
 
   all() {
-    return this.Records(
-      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name}`).all()
-    );
+    const sql = `SELECT * FROM ${this.__table_name}`;
+    return this.Records(this.__db_connection.prepare(sql).all());
   }
 
   first(counts) {
@@ -178,8 +177,7 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   }
 
   find(id) {
-    return new this.Record(
-      this.__db_connection.prepare(`SELECT * FROM ${this.__table_name} WHERE id = ?`, id).get(id)
-    );
+    const sql = `SELECT * FROM ${this.__table_name} WHERE id = ?`;
+    return this.Record(this.__db_connection.prepare(sql, id).get(id));
   }
 }

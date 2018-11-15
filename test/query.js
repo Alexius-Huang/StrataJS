@@ -39,6 +39,9 @@ class Posts extends Strata.Model {
 const $users = new Users();
 const $posts = new Posts();
 
+$users.hasMany($posts, { foreignKey: 'user_id' });
+$posts.belongsTo($users, { foreignKey: 'user_id' });
+
 test.before(t => {
   for (let i = 1; i <= 10; i++) {
     $users.create({ name: 'Maxwell', account: `maxwell-${i}`, age: i * 3, married: false });
@@ -179,4 +182,14 @@ test('Model#where, Model#limit, Model#first, Model#last Chain', t => {
   t.is(posts3[4].user_id, 2);
   t.is(posts3[5].user_id, 4);
   t.is(posts3[6].user_id, 2);
+});
+
+test('Model#hasMany relationship', t => {
+  const posts = $users.find(1).posts.evaluate();
+  t.is(posts.length, 12);
+});
+
+test('Model#belongsTo relationship', t => {
+  const user = $posts.find(1).user;
+  t.is(user.id, 2);
 });
