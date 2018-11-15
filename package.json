@@ -1,5 +1,5 @@
 {
-  "name": "strata-js",
+  "name": "strata-orm",
   "version": "1.0.0",
   "description": "An ORM infrastructure design relative to Rails' ActiveRecord",
   "main": "strata.js",

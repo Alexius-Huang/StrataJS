@@ -1,12 +1,27 @@
 # StrataJS
-An ORM infrastructure design relative to Rails' ActiveRecord
+An ORM infrastructure design relative to Rails' ActiveRecord implemented in JS
+
+## Installation
+
+Using NPM:
+
+```
+$ npm install strata-orm
+```
+
+Or using Yarn:
+
+```
+$ yarn add strata-orm
+```
+
 
 ## Usage
 
 Tips: Comment out section are WIP unless the featured is specifed with the tag `[Completed]`
 
 ```js
-import Strata from 'strata';
+import Strata from 'strata-orm';
 
 /**
  *  Strata's configuration list with default values below:
