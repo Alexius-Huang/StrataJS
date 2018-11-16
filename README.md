@@ -40,17 +40,17 @@ import Strata from 'strata-orm';
  *  Strata.hooks.afterCommit   = function() {}
  **/
 
-const { INTEGER, STRING, BOOLEAN, TEXT } = Strata.Types;
+const { Types } = Strata;
 
 class UserModel extends Strata.Model {
   constructor() {
     super({
       tableName: 'users',
       fields: [
-        { name: 'name',    type: STRING,  required: true },
-        { name: 'account', type: STRING,  required: true, unique: true },
-        { name: 'age',     type: INTEGER,  default: null },
-        { name: 'married', type: BOOLEAN, required: true, default: false }
+        { name: 'name',    type: Types.String,  required: true },
+        { name: 'account', type: Types.String,  required: true, unique: true },
+        { name: 'age',     type: Types.Integer,  default: null },
+        { name: 'married', type: Types.Boolean, required: true, default: false }
       ]
     });
     /**
@@ -106,9 +106,9 @@ class PostModel extends Strata.Model {
     super({
       tableName: 'posts',
       fields: [
-        { name: 'title',   type: STRING, required: true },
-        { name: 'content', type: STRING, default: 'Content of $title' },
-        { name: 'user_id', type: INTEGER, required: true }
+        { name: 'title',   type: Types.String, required: true },
+        { name: 'content', type: Types.String, default: 'Content of $title' },
+        { name: 'user_id', type: Types.Integer, required: true }
       ]
     });
     // In content field, there is a template formatted value which interpolates the value of title field
@@ -130,20 +130,20 @@ const allUsers = $users.all();
 $users.find(1);
 
 // Find first several rows of record, for instance, find the first five posts:
-$posts.first(5);
+$posts.first(5).evaluate();
 
 // Find last several rows of record, for instance, find the last five posts:
-$posts.last(5);
+$posts.last(5).evaluate();
 
 // Where expressions, for instance:
-$users.where({ age: 18 });                       // find users where age == 18
-$users.where({ age: { gte: 18 } });              // find users where age >= 18
-$users.where({ age: { gte: 12, lt: 18 } });      // find users where age >= 12 && age < 18
-$users.where({ name: 'Max', age: { gt: 18 } });  // find users where name == 'Max' && age > 18
-$users.where({ age: { ne: 18 } });               // find users where age != 18
+$users.where({ age: 18 }).evaluate();                       // find users where age == 18
+$users.where({ age: { gte: 18 } }).evaluate();              // find users where age >= 18
+$users.where({ age: { gte: 12, lt: 18 } }).evaluate();      // find users where age >= 12 && age < 18
+$users.where({ name: 'Max', age: { gt: 18 } }).evaluate();  // find users where name == 'Max' && age > 18
+$users.where({ age: { ne: 18 } }).evaluate();               // find users where age != 18
 
 // Limit expressions, for instance:
-$users.where({ age: { gte: 18 } }).limit(10);       // find at most 10 users where age >= 18
+$users.where({ age: { gte: 18 } }).limit(10).evaluate();       // find at most 10 users where age >= 18
 
 // Sort expressions, for instance:
 // allUsers.sort({ id: 'DESC' });               // find all users sorted by ID in descending order
@@ -162,8 +162,8 @@ $users.hasMany($posts, { foreignKey: 'user_id' });
 $posts.belongsTo($users, { foreignKey: 'user_id' });
 
 // You can then use:
-$users.find(1).posts();
-$posts.find(1).user();
+$users.find(1).posts.evaluate();
+$posts.find(1).user;
 
 // If you want to rename the relationship in a more instinctive way, such as:
 // UserModel.hasMany(PostModel, { foreignKey: 'user_id', as: 'messages' });
