@@ -15,6 +15,13 @@ module.exports = instance => ({
       throw new Error(`Should explicitly have state for \`persisted\``)
     }
 
+    if (prop === 'destroyed') {
+      if (typeof obj.__$destroyed === 'boolean') {
+        return obj.__$destroyed;
+      }
+      throw new Error(`Should explicitly have state for \`destroyed\``)
+    }
+
     const isValid = (() => {
       for (let i = 0; i < this.__field_names.length; i += 1) {
         const name = this.__field_names[i];
@@ -61,6 +68,28 @@ module.exports = instance => ({
       };
     }
 
+    if (prop === 'destroy') {
+      return () => {
+        const isNewInstance = obj.__$new;
+        const saved = obj.__$saved;
+
+        if (isNewInstance) {
+          throw new Error('Shouldn\'t destroy impersisted record');
+        }
+
+        if (!saved) {
+          throw new Error('Shouldn\'t destroy unsaved(mutated) record');
+        }
+
+        const { sql, timestamp } = this.__generate_sql_delete_expression(obj);
+        this.__db_connection.prepare(sql).run();
+
+        obj.updated = timestamp;
+        obj.__$destroyed = true;
+        return true;
+      };
+    }
+
     /* Parse Has-Many Relationships */
     for (let i = 0; i < this.__has_many.length; i += 1) {
       const { name, foreignKey, model } = this.__has_many[i];
@@ -89,6 +118,10 @@ module.exports = instance => ({
   }.bind(instance),
 
   set: function (obj, prop, value) {
+    if (obj.__$destroyed) {
+      throw new Error('Record is read-only since it has been destroyed');
+    }
+
     if (this.__field_names.includes(prop)) {
       obj.__$saved = false;
 

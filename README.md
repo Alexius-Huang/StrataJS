@@ -208,7 +208,7 @@ u.saved; // true
 // });
 
 // Destruction
-// $users.find(1).destroy();
+$users.find(1).destroy();
 
 // Batch Destruction - Be careful with this
 // $users.where({ updated: { lte: Strata.Time(1).month.ago } }).destroy();

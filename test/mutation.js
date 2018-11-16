@@ -184,3 +184,44 @@ test('Record#save', t => {
   t.is(beforeCreateTime, afterCreateTime);
   t.not(beforeUpdateTime, afterUpdateTime);
 });
+
+test('Record#destroy', t => {
+  const u = $users.new();
+  try {
+    u.destroy();
+    throw new Error('Test Failure');
+  } catch (err) {
+    t.is(err.message, 'Shouldn\'t destroy impersisted record');
+  }
+
+  u.name = 'Maxwell';
+  u.account = 'maxwell-789';
+  u.age = 20;
+  u.married = true;
+  u.save();
+
+  u.name = 'Maximilian';
+  try {
+    u.destroy();
+    throw new Error('Test Failure');
+  } catch (err) {
+    t.is(err.message, 'Shouldn\'t destroy unsaved(mutated) record');
+  }
+
+  t.is(u.destroyed, false);
+
+  const user = $users.find(u.id);
+  t.is(user.destroyed, false);
+  user.destroy();
+  t.is(user.destroyed, true);
+
+  try {
+    user.name = 'Maxim';
+    throw new Error('Test Failure');
+  } catch (err) {
+    t.is(err.message, 'Record is read-only since it has been destroyed');
+  }
+
+  const noResult = $users.find(user.id);
+  t.is(noResult, null);
+});

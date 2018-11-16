@@ -4,15 +4,16 @@ const config = require('./config');
 const RecordHandler = require('./record_handler');
 const RecordsHandler = require('./records_handler');
 const Query = require('./query');
-const _ = require('./helpers');
 
 const RecordConstructor = handler => (value, options = {}) => {
   const decorate = {
     __$saved: false,
     __$new: false,
+    __$destroyed: false,
   };
-  if (options.saved) { decorate.__$saved = true; }
-  if (options.new)   { decorate.__$new   = true; }
+  if (options.saved)     { decorate.__$saved     = true; }
+  if (options.new)       { decorate.__$new       = true; }
+  if (options.destroyed) { decorate.__$destroyed = true; }
 
   return new Proxy(Object.assign(value, decorate), handler);
 };
@@ -23,7 +24,7 @@ module.exports = class Model {
    *  Type fields :: [
    *    {
    *      name:String
-   *      type:String
+   *      type:Strata.Type
    *      required:Boolean
    *      default:Any
    *      unique:Boolean
@@ -51,6 +52,7 @@ module.exports = class Model {
 
     this.__generate_sql_insert_expression = () => '';
     this.__generate_sql_update_expression = () => '';
+    this.__generate_sql_delete_expression = () => '';
     this.__define_sql_expression_methods();
 
     this.__has_many = [];
@@ -125,10 +127,20 @@ VALUES (${sqlInsertExprs.join(', ')}, ${now}, ${now})`,
         sql: `
 UPDATE ${this.__table_name}
 SET ${sqlUpdateExprs.join(', ')}
-WHERE id = ${obj.id}
-`,
+WHERE id = ${obj.id}`,
       };
     };
+
+    this.__generate_sql_delete_expression = (obj) => {
+      const now = Date.now();
+
+      return {
+        timestamp: now,
+        sql: `
+DELETE FROM ${this.__table_name}
+WHERE id = ${obj.id}`,
+      };
+    }
   }
 
   __build_table_if_not_exist() {
@@ -222,6 +234,11 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
 
   find(id) {
     const sql = `SELECT * FROM ${this.__table_name} WHERE id = ?`;
-    return this.Record(this.__db_connection.prepare(sql, id).get(id), { saved: true });
+    const result = this.__db_connection.prepare(sql, id).get(id);
+
+    if (result) {
+      return this.Record(result, { saved: true });
+    }
+    return null;
   }
 }
