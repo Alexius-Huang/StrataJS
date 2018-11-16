@@ -103,7 +103,7 @@ module.exports = class Model {
     this.__generate_sql_insert_expression = (obj) => {
       const now = Date.now();
       const sqlInsertExprs = this.__fields
-        .map(({ name, type }) => _.mapValues(type, obj[name]));
+        .map(({ name, type }) => type.__parseSQL(obj[name]));
 
       return {
         timestamp: now,
@@ -117,7 +117,7 @@ VALUES (${sqlInsertExprs.join(', ')}, ${now}, ${now})`,
       const now = Date.now();
 
       const sqlUpdateExprs = this.__fields
-        .map(({ name, type }) => `${name} = ${_.mapValues(type, obj[name])}`);
+        .map(({ name, type }) => `${name} = ${type.__parseSQL(obj[name])}`);
       sqlUpdateExprs.push(`updated = ${now}`);
 
       return {
@@ -135,7 +135,7 @@ WHERE id = ${obj.id}
     const sqlColumns = this.__fields.map((field) => {
       // TODO: Implement Default option
       const { name, type, required, unique /* default: d */ } = field;
-      const sqlType = _.mapTypes(type);
+      const { sqlType } = type;
       const sqlRequired = required ? ' NOT NULL' : '';
       const sqlUnique = unique ? ' UNIQUE' : '';
       const sqlDefault = '';

@@ -1,5 +1,3 @@
-const Types = require('./types');
-
 /* Generates handler for records */
 module.exports = instance => ({
   get: function (obj, prop) {
@@ -22,29 +20,13 @@ module.exports = instance => ({
         const name = this.__field_names[i];
         const type = this.__field_name_map_types[name];
         const required = this.__field_name_map_required[name];
-        const value = obj[name]
+        const value = obj[name];
 
-        const shouldRequired = required && value === null;
-        const checkNumber = (
-          [Types.INTEGER, Types.TIMESTAMP].includes(type) &&
-          typeof value !== 'number'
-        );
+        /* Skip validation if value is specifically null and not required */
+        if (!required && value === null) continue;
 
-        const checkBoolean = (
-          type === Types.BOOLEAN &&
-          (value !== 0 && value !== 1)
-        );
-
-        const checkString = (
-          [Types.STRING, Types.TEXT].includes(type) &&
-          typeof value !== 'string'
-        );
-
-        const incorrectType = checkNumber || checkBoolean || checkString;
-
-        if (shouldRequired || incorrectType) {
-          return false;
-        }
+        if (required && value === null) return false;
+        if (!type.validSQLInput(value)) return false;
       }
 
       return true;
@@ -100,11 +82,7 @@ module.exports = instance => ({
     /* Parse Correct Value According to Types */
     if (this.__field_names.includes(prop)) {
       const type = this.__field_name_map_types[prop];
-
-      /* Output Boolean should output as true or false */
-      if (type === Types.BOOLEAN) {
-        return obj[prop] === 1 ? true : false;
-      }
+      return type.output(obj[prop]);
     }
 
     return obj[prop];
@@ -116,33 +94,7 @@ module.exports = instance => ({
 
       const type = this.__field_name_map_types[prop];
 
-      if ([Types.INTEGER, Types.TIMESTAMP].includes(type)) {
-        if (typeof value === 'number' && /^\+?(0|[1-9]\d*)$/.test(String(value))) {
-          obj[prop] = value;
-        } else {
-          throw new Error(`${type} type should be assigned in number format`);
-        }
-      }
-      
-      /* Assign Boolean should store as 0 or 1 */
-      else if (type === Types.BOOLEAN) {
-        if (typeof value === 'boolean') {
-          obj[prop] = value ? 1 : 0;
-        } else if (value === 1 || value === 0) {
-          obj[prop] = value;
-        } else {
-          throw new Error('boolean type should be assigned `true`/`false` or `1`/`0`');
-        }
-      }
-
-      else {
-        if (typeof value === 'string') {
-          obj[prop] = value;
-        } else {
-          throw new Error(`${type} type should be assigned in string format`);
-        }
-      }
-
+      obj[prop] = type.assign(value);
       return true;
     }
 

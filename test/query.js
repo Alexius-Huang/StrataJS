@@ -7,17 +7,17 @@ const unlink = promisify(fs.unlink);
 
 Strata.config.DB_FILE = './local_test.sqlite3';
 
-const { STRING, INTEGER, BOOLEAN, TEXT } = Strata.Types;
+const { Types } = Strata;
 
 class Users extends Strata.Model {
   constructor() {
     super({
       tableName: 'users',
       fields: [
-        { name: 'name',    type: STRING,  required: true },
-        { name: 'account', type: STRING,  required: true, unique: true },
-        { name: 'age',     type: INTEGER, default: null },
-        { name: 'married', type: BOOLEAN, required: true }
+        { name: 'name',    type: Types.String,  required: true },
+        { name: 'account', type: Types.String,  required: true, unique: true },
+        { name: 'age',     type: Types.Integer, default: null },
+        { name: 'married', type: Types.Boolean, required: true }
       ]
     });
   }
@@ -28,9 +28,9 @@ class Posts extends Strata.Model {
     super({
       tableName: 'posts',
       fields: [
-        { name: 'title',   type: STRING, required: true },
-        { name: 'content', type: TEXT, default: null },
-        { name: 'user_id', type: INTEGER, required: true }
+        { name: 'title',   type: Types.String, required: true },
+        { name: 'content', type: Types.Text, default: null },
+        { name: 'user_id', type: Types.Integer, required: true }
       ]
     });
   }

@@ -1,10 +1,3 @@
-const Types = require('./types');
-
-const comparableTypes = [
-  Types.INTEGER,
-  Types.TIMESTAMP,
-];
-
 module.exports = class Query {
   constructor(params) {
     this.__whereExpr = [];
@@ -58,7 +51,7 @@ module.exports = class Query {
 
         /* Comparison */
         if (typeof value === 'object') {
-          if (comparableTypes.includes(type)) {
+          if (type.comparable) {
             const operators = Object.keys(value);
             operators.forEach((op) => {
               if (op === 'gt') {
@@ -74,12 +67,12 @@ module.exports = class Query {
               }  
             });
           } else {
-            throw new Error(`Type \`${type}\` is uncomparable in Where expression`);
+            throw new Error(`Type \`${type.name}\` is uncomparable in Where expression`);
           }
         }
         
         /* Equality Comparison */
-        else if ([Types.STRING, Types.TEXT].includes(type)) {
+        else if (type.stringFormat) {
           exprs.push(`${fieldName} = '${value}'`);
         } else {
           exprs.push(`${fieldName} = ${value}`);

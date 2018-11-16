@@ -2,27 +2,26 @@ import test from 'ava';
 import Strata from '../strata';
 import fs from 'fs';
 import { promisify } from 'util';
-import { timingSafeEqual } from 'crypto';
 
 const unlink = promisify(fs.unlink);
 
 Strata.config.DB_FILE = './mutation_test.sqlite3';
 
-const { STRING, INTEGER, BOOLEAN, TEXT } = Strata.Types;
+const { Types } = Strata;
 
 let $users;
 let $posts;
 
-test.beforeEach(t => {
+test.before(t => {
   class Users extends Strata.Model {
     constructor() {
       super({
         tableName: 'users',
         fields: [
-          { name: 'name',    type: STRING,  required: true },
-          { name: 'account', type: STRING,  required: true, unique: true },
-          { name: 'age',     type: INTEGER, default: null },
-          { name: 'married', type: BOOLEAN, required: true }
+          { name: 'name',    type: Types.String,  required: true },
+          { name: 'account', type: Types.String,  required: true, unique: true },
+          { name: 'age',     type: Types.Integer, default: null },
+          { name: 'married', type: Types.Boolean, required: true }
         ]
       });
     }
@@ -33,9 +32,9 @@ test.beforeEach(t => {
       super({
         tableName: 'posts',
         fields: [
-          { name: 'title',   type: STRING, required: true },
-          { name: 'content', type: TEXT, default: null },
-          { name: 'user_id', type: INTEGER, required: true }
+          { name: 'title',   type: Types.String, required: true },
+          { name: 'content', type: Types.Text, default: null },
+          { name: 'user_id', type: Types.Integer, required: true }
         ]
       });
     }
@@ -48,7 +47,7 @@ test.beforeEach(t => {
   $posts.belongsTo($users, { foreignKey: 'user_id' });
 });
 
-test.afterEach.always(async t => {
+test.after.always(async t => {
   try {
     await unlink('./mutation_test.sqlite3');
   } catch(err) {
@@ -74,27 +73,34 @@ test('Model#new', t => {
     user.name = 123;
     throw new Error('Test failed');
   } catch (err) {
-    t.is(err.message, 'string type should be assigned in string format');
+    t.is(err.message, 'Wrong type format when assigning into type `string`');
   }
 
   try {
     user.age = '18';
     throw new Error('Test failed');
   } catch (err) {
-    t.is(err.message, 'integer type should be assigned in number format');
+    t.is(err.message, 'Wrong type format when assigning into type `integer`');
   }
 
   try {
     user.married = 2;
     throw new Error('Test failed');
   } catch(err) {
-    t.is(err.message, 'boolean type should be assigned `true`/`false` or `1`/`0`');
+    t.is(err.message, 'Wrong type format when assigning into type `boolean`');
+  }
+
+  try {
+    user.married = 0;
+    throw new Error('Test failed');
+  } catch(err) {
+    t.is(err.message, 'Wrong type format when assigning into type `boolean`');
   }
 
   user.name = 'Maximilian';
   user.account = 'maximilian-123';
   user.age = 18;
-  user.married = 0;
+  user.married = false;
 
   t.is(user.name, 'Maximilian');
   t.is(user.account, 'maximilian-123');
