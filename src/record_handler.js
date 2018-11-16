@@ -7,10 +7,17 @@ module.exports = instance => ({
       if (typeof obj.__$saved === 'boolean') {
         return obj.__$saved;
       }
-      return true;
+      throw new Error(`Should explicitly have state for \`saved\``);
     }
 
-    if (prop === 'valid') {
+    if (prop === 'persisted') {
+      if (typeof obj.__$new === 'boolean') {
+        return !obj.__$new;
+      }
+      throw new Error(`Should explicitly have state for \`persisted\``)
+    }
+
+    const isValid = (() => {
       for (let i = 0; i < this.__field_names.length; i += 1) {
         const name = this.__field_names[i];
         const type = this.__field_name_map_types[name];
@@ -41,11 +48,15 @@ module.exports = instance => ({
       }
 
       return true;
-    }
+    })();
+
+    if (prop === 'valid') return isValid;
 
     if (prop === 'save') {
       return () => {
         const isNewInstance = obj.__$new;
+
+        if (!isValid) throw new Error('Record format isn\'t correct');
 
         if (isNewInstance) {
           const { sql, timestamp } = this.__generate_sql_insert_expression(obj);
@@ -55,10 +66,15 @@ module.exports = instance => ({
           obj.created = timestamp;
           obj.updated = timestamp;
           obj.__$saved = true;
-
-          return this;
+          obj.__$new = false;
+          return true;
         } else {
-          // const exprs = this.__generate_sql_update_expression(obj);
+          const { sql, timestamp } = this.__generate_sql_update_expression(obj);
+          this.__db_connection.prepare(sql).run();
+
+          obj.updated = timestamp;
+          obj.__$saved = true;
+          return true;
         }
       };
     }

@@ -6,7 +6,16 @@ const RecordsHandler = require('./records_handler');
 const Query = require('./query');
 const _ = require('./helpers');
 
-const RecordConstructor = handler => value => new Proxy(value, handler);
+const RecordConstructor = handler => (value, options = {}) => {
+  const decorate = {
+    __$saved: false,
+    __$new: false,
+  };
+  if (options.saved) { decorate.__$saved = true; }
+  if (options.new)   { decorate.__$new   = true; }
+
+  return new Proxy(Object.assign(value, decorate), handler);
+};
 const RecordsConstructor = handler => value => new Proxy(value, handler);
 
 module.exports = class Model {
@@ -74,18 +83,18 @@ module.exports = class Model {
   }
 
   new() {
-    const record = { __$saved: false, __$new: true, };
-
+    const record = {};
     this.__field_names.forEach(name => {
       Object.assign(record, { [name]: null });
     });
+
     Object.assign(record, {
       id: null,
       created: null,
       updated: null,
     });
 
-    return this.Record(record);
+    return this.Record(record, { saved: false, new: true });
   }
 
   __define_sql_expression_methods() {
@@ -106,12 +115,9 @@ VALUES (${sqlInsertExprs.join(', ')}, ${now}, ${now})`,
 
     this.__generate_sql_update_expression = (obj) => {
       const now = Date.now();
-      const fields = this.__field_names;
 
-      const sqlUpdateExprs = []; 
-      for (let field of fields) {
-        sqlUpdateExprs.push(`${field} = ${obj[field]}`);
-      }
+      const sqlUpdateExprs = this.__fields
+        .map(({ name, type }) => `${name} = ${_.mapValues(type, obj[name])}`);
       sqlUpdateExprs.push(`updated = ${now}`);
 
       return {
@@ -170,7 +176,15 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
     const { sql, timestamp } = this.__generate_sql_insert_expression(obj);
     const { lastInsertRowid: id } = this.__db_connection.prepare(sql).run();
 
-    return this.Record({ ...obj, id, created: timestamp, updated: timestamp });
+    return this.Record({
+      ...obj,
+      id,
+      created: timestamp,
+      updated: timestamp,
+    }, {
+      saved: true,
+      new: false,
+    });
   }
 
   all() {
@@ -208,6 +222,6 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
 
   find(id) {
     const sql = `SELECT * FROM ${this.__table_name} WHERE id = ?`;
-    return this.Record(this.__db_connection.prepare(sql, id).get(id));
+    return this.Record(this.__db_connection.prepare(sql, id).get(id), { saved: true });
   }
 }

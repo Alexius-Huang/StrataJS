@@ -2,6 +2,7 @@ import test from 'ava';
 import Strata from '../strata';
 import fs from 'fs';
 import { promisify } from 'util';
+import { timingSafeEqual } from 'crypto';
 
 const unlink = promisify(fs.unlink);
 
@@ -103,6 +104,8 @@ test('Model#new', t => {
   t.is(user.updated, null);
   t.is(user.id, null);
 
+  t.is(user.persisted, false);
+
   try {
     user.abc = '123';
     throw new Error('Didn\'t raise the error when assigning wrong field');
@@ -117,9 +120,61 @@ test('Model#new', t => {
   t.not(user.updated, null);
   t.not(user.id, null);
 
+  t.is(user.persisted, true);
+
   const result = $users.find(user.id);
   t.is(result.name, 'Maximilian');
   t.is(result.age, 18);
   t.is(result.account, 'maximilian-123');
   t.is(result.married, false);
+
+  t.is(result.saved, true);
+  t.is(result.persisted, true);
+});
+
+test('Record#save', t => {
+  const u = $users.new();
+  t.is(u.saved, false);
+  t.is(u.persisted, false);
+  t.is(u.valid, false);
+
+  try {
+    u.save();
+    throw new Error('Test Failed');
+  } catch (err) {
+    t.is(err.message, 'Record format isn\'t correct');
+  }
+
+  t.is(u.saved, false);
+  t.is(u.persisted, false);
+  t.is(u.valid, false);
+
+  u.name = 'Maxims';
+  u.age = 21;
+  t.is(u.valid, false);
+  u.married = false;
+  u.account = 'maxims-456';
+
+  t.is(u.saved, false);
+  t.is(u.valid, true);
+
+  u.save();
+
+  t.is(u.saved, true);
+  t.is(u.persisted, true);
+
+  u.name ='Maxims Alexius';
+  const beforeCreateTime = u.created;
+  const beforeUpdateTime = u.updated;
+  t.is(u.saved, false);
+  t.is(u.persisted, true);
+
+  u.save();
+  t.is(u.saved, true);
+  t.is(u.persisted, true);
+
+  const afterCreateTime = u.created;
+  const afterUpdateTime = u.updated;
+  t.is(beforeCreateTime, afterCreateTime);
+  t.not(beforeUpdateTime, afterUpdateTime);
 });
