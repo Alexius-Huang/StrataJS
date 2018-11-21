@@ -97,6 +97,74 @@ module.exports = instance => ({
       };
     }
 
+    if (prop === 'mutateEach') {
+      return (mutation) => {
+        const destroyed = obj.__$destroyed;
+
+        if (destroyed) {
+          throw new Error('Shouldn\'t mutate destroyed records');
+        }
+
+        obj.forEach((record) => {
+          const originalRecord = {};
+          this.__field_names.forEach((name) => {
+            Object.assign(originalRecord, { [name]: record[name] });
+          });
+
+          let mutated = false;
+          const mutateRecordProxy = new Proxy(originalRecord, {
+            get: (mutateAvailableObj, prop) => {
+              if (['id', 'created', 'updated'].includes(prop)) {
+                return record[prop];
+              }
+ 
+              if (this.__field_names.includes(prop)) {
+                return mutateAvailableObj[prop];
+              }
+  
+              throw new Error(`No column \`${prop}\` exists`);
+            },
+            set: (mutateAvailableObj, prop, value) => {
+              if (['id', 'created', 'updated'].includes(prop)) {
+                throw new Error(`Shouldn\'t assign value to read-only field \`${prop}\``);
+              }
+  
+              if (this.__field_names.includes(prop)) {
+                mutated = true;
+                const required = this.__field_name_map_required[prop];
+                if (!required & value === null) {
+                  mutateAvailableObj[prop] = null;
+                }
+  
+                const type = this.__field_name_map_types[prop];
+                mutateAvailableObj[prop] = type.assign(value);
+                return true;
+              }
+  
+              throw new Error(`Shouldn\'t assign value to non-existed field \`${prop}\``)
+            },
+          });
+    
+          mutation(mutateRecordProxy);
+
+          this.__field_names.forEach((name) => {
+            if (mutateRecordProxy[name] !== undefined) {
+              record[name] = mutateRecordProxy[name];
+            }
+          });
+
+          if (!mutated) return true;
+  
+          const { sql, timestamp } = this.__generate_sql_update_expression(record);
+          this.__db_connection.prepare(sql).run();
+  
+          record.updated = timestamp;
+          record.__$saved = true;
+        });
+        return true;
+      };
+    }
+
     /* Accessing Records with index will return wrapped Record object */
     if (/^\+?(0|[1-9]\d*)$/.test(prop)) {
       if (obj.__$destroyed) {

@@ -283,6 +283,43 @@ test('Records#mutate', t => {
   t.is(queried[0].married, true);
 });
 
+test('Records#mutateEach', t => {
+  const users = [];
+  for (let i = 1; i <= 10; i += 1) {
+    const created = $users.create({ name: 'batch-each-mutation', account: `batch-each-mutation-${i}`, age: i * 3, married: false });
+    users.push(created);
+  }
+
+  const result = $users.where({ name: 'batch-each-mutation' }).evaluate();
+
+  const notMutatedBeforeUpdateTime = result[0].updated;
+  const mutatedBeforeUpdateTime = result[5].updated;
+
+  result.mutateEach((u) => {
+    if (u.age >= 18) {
+      u.married = true;
+    }
+  });
+
+  const notMutatedAfterUpdateTime = result[0].updated;
+  const mutatedAfterUpdateTime = result[5].updated;
+  t.is(notMutatedBeforeUpdateTime, notMutatedAfterUpdateTime);
+  t.not(mutatedBeforeUpdateTime, mutatedAfterUpdateTime);
+
+  for (let i = 0; i < result.length; i += 1) {
+    const record = result[i];
+    if (record.age >= 18) {
+      t.is(record.married, true);
+    } else {
+      t.is(record.married, false);
+    }
+  }
+
+  const queried = $users.where({ name: 'batch-each-mutation', married: true }).evaluate();
+  t.is(queried.length, 5);
+  t.is(queried[0].age, 18);
+});
+
 test('Record#destroy', t => {
   const u = $users.new();
   try {

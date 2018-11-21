@@ -114,6 +114,7 @@ module.exports = instance => ({
               const required = this.__field_name_map_required[prop];
               if (!required & value === null) {
                 mutateAvailableObj[prop] = null;
+                return true;
               }
 
               const type = this.__field_name_map_types[prop];
