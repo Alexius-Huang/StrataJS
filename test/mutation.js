@@ -185,6 +185,76 @@ test('Record#save', t => {
   t.not(beforeUpdateTime, afterUpdateTime);
 });
 
+test('Record#mutate', t => {
+  const user = $users.create({
+    name: 'mutation-test',
+    account: 'mutation-test',
+    age: 18,
+    married: false,
+  });
+
+  t.is(user.persisted, true);
+  t.is(user.saved, true);
+
+  const beforeUpdateTime = user.updated;
+
+  user.mutate((u) => {
+    u.name = 'mutation-test-modified';
+    return u;
+  });
+
+  t.is(user.saved, true);
+  t.is(user.name, 'mutation-test-modified');
+
+  const afterUpdateTime = user.updated;
+  t.is(user.saved, true);
+  t.not(beforeUpdateTime, afterUpdateTime);
+
+  const queried = $users.find(user.id);
+  t.is(queried.updated, user.updated);
+  t.is(queried.name, 'mutation-test-modified');
+
+  try {
+    user.mutate((u) => {
+      t.is(u.created, user.created);
+      u.created = 123;
+    });
+    throw new Error('Test failed');
+  } catch (err) {
+    t.is(err.message, 'Shouldn\'t assign value to read-only field `created`');
+  }
+
+  try {
+    user.mutate((u) => {
+      u.notExistedColumn;
+    });
+    throw new Error('Test failed');
+  } catch (err) {
+    t.is(err.message, 'No column `notExistedColumn` exists');
+  }
+
+  try {
+    user.mutate((u) => {
+      u.age = 'string';
+    });
+    throw new Error('Test failed');
+  } catch (err) {
+    t.is(err.message, 'Wrong type format when assigning into type `integer`');
+  }
+
+  user.name = 'mutation-test-2';
+  t.is(user.saved, false);
+  try {
+    user.mutate(user => {
+      user.name = 'mutation-test-modified-2';
+      return user;
+    });
+    throw new Error('Test failed');
+  } catch (err) {
+    t.is(err.message, 'Should\'t mutate unsaved(mutated) record, mutation only applies to saved record only');
+  }
+});
+
 test('Record#destroy', t => {
   const u = $users.new();
   try {

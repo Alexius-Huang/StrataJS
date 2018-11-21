@@ -194,10 +194,9 @@ u.saved; // true
 // $users.find(1).update({ name: 'Maximilian', age: 18, married: false });
 
 // Mutation - Similar to HTTP verb PATCH, but you can simply pass a function
-// $users.find(1).mutate((user) => {
-//   user.name = 'Maximilian';
-//   return user;
-// });
+$users.find(1).mutate((user) => {
+  user.name = 'Maximilian';
+});
 
 // Batch Mutation - Update a batch of records, act like map function but with database commission
 // $users.where({ age: { gte: 18 } }).mutate((user) => {

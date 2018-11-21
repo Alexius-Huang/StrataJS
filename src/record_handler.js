@@ -22,7 +22,7 @@ module.exports = instance => ({
       throw new Error('Should explicitly have state for `destroyed`');
     }
 
-    const isValid = (() => {
+    const checkIsValid = () => {
       for (let i = 0; i < this.__field_names.length; i += 1) {
         const name = this.__field_names[i];
         const type = this.__field_name_map_types[name];
@@ -37,7 +37,9 @@ module.exports = instance => ({
       }
 
       return true;
-    })();
+    };
+
+    const isValid = checkIsValid();
 
     if (prop === 'valid') return isValid;
 
@@ -65,6 +67,78 @@ module.exports = instance => ({
           obj.__$saved = true;
           return true;
         }
+      };
+    }
+
+    if (prop === 'mutate') {
+      return (mutation) => {
+        const isNewInstance = obj.__$new;
+        const saved = obj.__$saved;
+        const destroyed = obj.__$destroyed;
+
+        if (isNewInstance) {
+          throw new Error('Shouldn\'t mutate impersisted record');
+        }
+
+        if (!saved) {
+          throw new Error('Should\'t mutate unsaved(mutated) record, mutation only applies to saved record only');
+        }
+
+        if (destroyed) {
+          throw new Error('Shouldn\'t mutate destroyed record');
+        }
+
+        const originalRecord = {};
+        this.__field_names.forEach((name) => {
+          Object.assign(originalRecord, { [name]: obj[name] });
+        });
+
+        const mutateRecordProxy = new Proxy(originalRecord, {
+          get: (mutateAvailableObj, prop) => {
+            if (['id', 'created', 'updated'].includes(prop)) {
+              return obj[prop];
+            }
+
+            if (this.__field_names.includes(prop)) {
+              return mutateAvailableObj[prop];
+            }
+
+            throw new Error(`No column \`${prop}\` exists`);
+          },
+          set: (mutateAvailableObj, prop, value) => {
+            if (['id', 'created', 'updated'].includes(prop)) {
+              throw new Error(`Shouldn\'t assign value to read-only field \`${prop}\``);
+            }
+
+            if (this.__field_names.includes(prop)) {
+              const required = this.__field_name_map_required[prop];
+              if (!required & value === null) {
+                mutateAvailableObj[prop] = null;
+              }
+
+              const type = this.__field_name_map_types[prop];
+              if (type.strongValidAssignment(value)) {
+                mutateAvailableObj[prop] = value;
+              }
+              return true;
+            }
+
+            throw new Error(`Shouldn\'t assign value to non-existed field \`${prop}\``)
+          },
+        });
+
+        mutation(mutateRecordProxy);
+
+        this.__field_names.forEach((name) => {
+          obj[name] = mutateRecordProxy[name];
+        });
+
+        const { sql, timestamp } = this.__generate_sql_update_expression(obj);
+        this.__db_connection.prepare(sql).run();
+
+        obj.updated = timestamp;
+        obj.__$saved = true;
+        return true;
       };
     }
 
