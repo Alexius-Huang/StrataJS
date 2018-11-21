@@ -15,10 +15,163 @@ Or using Yarn:
 $ yarn add strata-orm
 ```
 
+## Documentation
 
-## Usage
+### Defining Models
 
-Tips: Comment out section are WIP unless the featured is specifed with the tag `[Completed]`
+```js
+import Strata from 'strata-orm';
+
+const { Types } = Strata;
+
+class UserModel extends Strata.Model {
+  constructor() {
+    super({
+      tableName: 'users',
+      fields: [
+        { name: 'name',    type: Types.String,  required: true },
+        { name: 'account', type: Types.String,  required: true, unique: true },
+        { name: 'age',     type: Types.Integer,  default: null },
+        { name: 'married', type: Types.Boolean, required: true, default: false }
+      ]
+    });
+  }
+}
+
+class PostModel extends Strata.Model {
+  constructor() {
+    super({
+      tableName: 'posts',
+      fields: [
+        { name: 'title',   type: Types.String, required: true },
+        { name: 'content', type: Types.String, default: 'Content of $title' },
+        { name: 'user_id', type: Types.Integer, required: true }
+      ]
+    });
+  }
+}
+
+/* Modal Instances */
+const User = new UserModel();
+const Post = new PostModel();
+```
+
+### Query
+
+#### `Strata.Model#find -> Record` Find Single Record
+
+For instance, get user with `id = 1`:
+
+```js
+const User = new UserModel();
+User.find(1);
+```
+
+#### `Query#evaluate -> Records` Get Query Result
+
+Using the `where` / `limit` / `first` / `last` will yield a `Query` object. You need to expand the result by calling the `Query#evaluate` method:
+
+```js
+const User = new UserModel();
+const query = User.where({ age: 18 });
+const result = query.evaluate();
+```
+
+#### `Strata.Model#limit | Query#limit -> Query`
+
+Limit the record result number. Notice that the `Query` object also have `limit` method which means that the query is chainable:
+
+```js
+const User = new UserModel();
+
+/* Get the fisrt 5 users */
+const result1 = User.limit(5).evaluate();
+
+/* Get the first 5 users who are aged over 18 */
+const result2 = User.where({ age: { gt: 18 } }).limit(5);
+```
+
+#### `Strata.Model#first | Query#first -> Query`
+
+Alias to `Strata.Model#limit` and `Query#limit`
+
+#### `Strata.Model#last | Query#last -> Query`
+
+Limit the record result number reversely. Notice that the `Query` object also have `last` method which means that the query is chainable:
+
+```js
+const User = new UserModel();
+
+/* Get the last 5 users */
+const result1 = User.last(5).evaluate();
+
+/* Get the last 5 users who are aged over 18 */
+const result2 = User.where({ age: { gt: 18 } }).last(5);
+```
+
+#### `Strata.Model#where | Query#where -> Query`
+
+Query the record conditionally. Notice that the `Query` object also have `last` method which means that the query is chainable.
+
+For instance, you can query a specific value with corresponding column:
+
+```js
+const User = new UserModel();
+
+/* Get users where their age is equal to 18 */
+const result1 = User.where({ age: 18 }).evaluate();
+
+/* Get users where their name is equal to 'Maxwell' */
+const result2 = User.where({ name: 'Maxwell' }).evaluate();
+```
+
+Or you can query in `AND` logic by specifying more properties in the `where` clause:
+
+```js
+/* Get users where their name is equal to 'Maxwell' and not married */
+const result1 = User.where({ name: 'Maxwell', married: false }).evaluate();
+```
+
+To query in `OR` logic, you should use chained where clause:
+
+```js
+/* Get users where their name is equal to 'Maxwell' or not married */
+const result2 = User.where({ name: 'Maxwell' }).where({ married: false }).evaluate();
+```
+
+If the type of the column when defined in model is specified `comparable`, for instance:
+
+```js
+Strata.Types.Integer.comparable // true
+Strata.Types.String.comparable  // true
+```
+
+You can use compare operations in where clause:
+
+```js
+/* Get users aged less than 18 */
+const result1 = User.where({ age: { lt: 18 } }).evaluate();
+
+/* Get users aged less than or equal to 18 */
+const result2 = User.where({ age: { lte: 18 } }).evaluate();
+
+/* Get users aged greater than 18 */
+const result3 = User.where({ age: { gt: 18 } }).evaluate();
+
+/* Get users aged greater than or equal to 18 */
+const result4 = User.where({ age: { gte: 18 } }).evaluate();
+
+/* Get users aged not equal to 18 */
+const result5 = User.where({ age: { ne: 18 } }).evaluate();
+
+/* Get users aged greater than 12 AND less than or equal to 18 */
+const result6 = User.where({ age: { gt: 12, lte: 18 } }).evaluate();
+
+/* Get users aged less than or equal to 12 OR greater than 18 */
+const result6 = User.where({ age: { lte: 12 } }).where({ age: { gt: 18 } }).evaluate();
+```
+
+## Planning Features
 
 ```js
 import Strata from 'strata-orm';
@@ -125,25 +278,6 @@ const $posts = new PostModel();
 /* Basic Queries */
 // Get all records, for instance, find all users:
 const allUsers = $users.all();
-
-// Find some record, for instance, find the first user:
-$users.find(1);
-
-// Find first several rows of record, for instance, find the first five posts:
-$posts.first(5).evaluate();
-
-// Find last several rows of record, for instance, find the last five posts:
-$posts.last(5).evaluate();
-
-// Where expressions, for instance:
-$users.where({ age: 18 }).evaluate();                       // find users where age == 18
-$users.where({ age: { gte: 18 } }).evaluate();              // find users where age >= 18
-$users.where({ age: { gte: 12, lt: 18 } }).evaluate();      // find users where age >= 12 && age < 18
-$users.where({ name: 'Max', age: { gt: 18 } }).evaluate();  // find users where name == 'Max' && age > 18
-$users.where({ age: { ne: 18 } }).evaluate();               // find users where age != 18
-
-// Limit expressions, for instance:
-$users.where({ age: { gte: 18 } }).limit(10).evaluate();       // find at most 10 users where age >= 18
 
 // Sort expressions, for instance:
 // allUsers.sort({ id: 'DESC' });               // find all users sorted by ID in descending order
