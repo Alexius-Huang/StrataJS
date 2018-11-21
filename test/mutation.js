@@ -200,11 +200,13 @@ test('Record#mutate', t => {
 
   user.mutate((u) => {
     u.name = 'mutation-test-modified';
+    u.married = true;
     return u;
   });
 
   t.is(user.saved, true);
   t.is(user.name, 'mutation-test-modified');
+  t.is(user.married, true);
 
   const afterUpdateTime = user.updated;
   t.is(user.saved, true);
@@ -253,6 +255,32 @@ test('Record#mutate', t => {
   } catch (err) {
     t.is(err.message, 'Should\'t mutate unsaved(mutated) record, mutation only applies to saved record only');
   }
+});
+
+test('Records#mutate', t => {
+  const users = [];
+  for (let i = 1; i <= 10; i += 1) {
+    const created = $users.create({ name: 'batch-mutation', account: `batch-mutation-${i}`, age: i * 3, married: false });
+    users.push(created);
+  }
+
+  const result = $users.where({ name: 'batch-mutation', age: { gt: 18 } }).evaluate();
+  t.is(result.length, 4);
+  const beforeUpdateTime = result[0].updated;
+
+  result.mutate((u) => {
+    u.name = 'batch-mutation-modified';
+    u.married = true;
+  });
+
+  const afterUpdateTime = result[0].updated;
+  t.not(beforeUpdateTime, afterUpdateTime);
+  t.is(result[0].name, 'batch-mutation-modified');
+  t.is(result[0].married, true);
+
+  const queried = $users.where({ name: 'batch-mutation-modified' }).evaluate();
+  t.is(queried.length, 4);
+  t.is(queried[0].married, true);
 });
 
 test('Record#destroy', t => {

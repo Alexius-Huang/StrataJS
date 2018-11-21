@@ -13,6 +13,9 @@ const RecordConstructor = handler => (value, options = {}) => {
 };
 
 module.exports = instance => ({
+  set: function() {
+    throw new Error('Records are read-only');
+  },
   get: function (obj, prop) {
     if (prop === 'destroyed') {
       if (typeof obj.__$destroyed === 'boolean') {
@@ -35,6 +38,63 @@ module.exports = instance => ({
         obj.__$destroyed = true;
         return true;
       }
+    }
+
+    if (prop === 'mutate') {
+      return (mutation) => {
+        const destroyed = obj.__$destroyed;
+
+        if (destroyed) {
+          throw new Error('Shouldn\'t mutate destroyed records');
+        }
+
+        const sqlUpdateObj = {};
+
+        const mutateRecordProxy = new Proxy({}, {
+          get: (_, prop) => {
+            if (['id', 'created', 'updated'].includes(prop)) {
+              throw new Error(`Cannot access column \`${prop}\` since it is a Records object instead of a single Record`);
+            }
+
+            if (this.__field_names.includes(prop)) {
+              const type = this.__field_name_map_types[prop];
+              return type.output(sqlUpdateObj[prop]);
+            }
+
+            throw new Error(`No column \`${prop}\` exists`);
+          },
+          set: (_, prop, value) => {
+            if (['id', 'created', 'updated'].includes(prop)) {
+              throw new Error(`Shouldn\'t assign value to read-only field \`${prop}\``);
+            }
+
+            if (this.__field_names.includes(prop)) {
+              const required = this.__field_name_map_required[prop];
+              if (!required & value === null) {
+                sqlUpdateObj[prop] = null;
+                return true;
+              }
+
+              const type = this.__field_name_map_types[prop];
+              sqlUpdateObj[prop] = type.assign(value);
+              return true;
+            }
+
+            throw new Error(`Shouldn\'t assign value to non-existed field \`${prop}\``)
+          },
+        });
+
+        mutation(mutateRecordProxy);
+
+        const { sql, timestamp } = this.__generate_sql_batch_update_expression(obj, sqlUpdateObj);
+        this.__db_connection.prepare(sql).run();
+
+        obj.forEach(record => {
+          record.updated = timestamp;
+          Object.assign(record, sqlUpdateObj);
+        });
+        return true;
+      };
     }
 
     /* Accessing Records with index will return wrapped Record object */

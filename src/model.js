@@ -139,6 +139,25 @@ WHERE id = ${obj.id}`,
       };
     };
 
+    this.__generate_sql_batch_update_expression = (records, mutation) => {
+      const now = Date.now();
+      const ids = records.map(({ id }) => id);
+
+      const sqlUpdateExprs = Object.keys(mutation).map((name) => {
+        const type = this.__field_name_map_types[name];
+        return `${name} = ${type.__parseSQL(mutation[name])}`
+      });
+      sqlUpdateExprs.push(`updated = ${now}`);
+
+      return {
+        timestamp: now,
+        sql: `
+UPDATE ${this.__table_name}
+SET ${sqlUpdateExprs.join(', ')}
+WHERE id IN (${ids.join(', ')})`,
+      }
+    };
+
     this.__generate_sql_delete_expression = (obj) => {
       const now = Date.now();
 

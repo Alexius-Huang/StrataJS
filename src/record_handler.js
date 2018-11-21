@@ -117,9 +117,7 @@ module.exports = instance => ({
               }
 
               const type = this.__field_name_map_types[prop];
-              if (type.strongValidAssignment(value)) {
-                mutateAvailableObj[prop] = value;
-              }
+              mutateAvailableObj[prop] = type.assign(value);
               return true;
             }
 
