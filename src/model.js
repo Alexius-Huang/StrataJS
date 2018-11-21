@@ -21,7 +21,7 @@ const RecordsConstructor = handler => (value, options = {}) => {
   const decorate = {
     __$destroyed: false,
   };
-  if (options.destroyed) { decorate.__$destroyed = true }
+  if (options.destroyed) { decorate.__$destroyed = true; }
 
   return new Proxy(Object.assign(value, decorate), handler);
 };

@@ -238,8 +238,10 @@ test('Records#destroy', t => {
   const result = $users.where({ name: 'batch-destroy', age: { gt: 21 } }).evaluate();
   t.is(result.length, 3);
   t.is(result.destroyed, false);
+  t.is(result[0].destroyed, false);
   result.destroy();
   t.is(result.destroyed, true);
+  t.is(result[0].destroyed, true);
 
   const afterDestroyed = $users.where({ name: 'batch-destroy' }).evaluate();
   t.is(afterDestroyed.length, 7);

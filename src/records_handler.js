@@ -1,3 +1,17 @@
+const RecordHandler = require('./record_handler');
+const RecordConstructor = handler => (value, options = {}) => {
+  const decorate = {
+    __$saved: false,
+    __$new: false,
+    __$destroyed: false,
+  };
+  if (options.saved)     { decorate.__$saved     = true; }
+  if (options.new)       { decorate.__$new       = true; }
+  if (options.destroyed) { decorate.__$destroyed = true; }
+
+  return new Proxy(Object.assign(value, decorate), handler);
+};
+
 module.exports = instance => ({
   get: function (obj, prop) {
     if (prop === 'destroyed') {
@@ -25,6 +39,10 @@ module.exports = instance => ({
 
     /* Accessing Records with index will return wrapped Record object */
     if (/^\+?(0|[1-9]\d*)$/.test(prop)) {
+      if (obj.__$destroyed) {
+        return this.Record(obj[prop], { destroyed: true });
+      }
+
       return this.Record(obj[prop]);
     }
     return obj[prop];
