@@ -5,21 +5,21 @@ module.exports = instance => ({
       if (typeof obj.__$saved === 'boolean') {
         return obj.__$saved;
       }
-      throw new Error(`Should explicitly have state for \`saved\``);
+      throw new Error('Should explicitly have state for `saved`');
     }
 
     if (prop === 'persisted') {
       if (typeof obj.__$new === 'boolean') {
         return !obj.__$new;
       }
-      throw new Error(`Should explicitly have state for \`persisted\``)
+      throw new Error('Should explicitly have state for `persisted`');
     }
 
     if (prop === 'destroyed') {
       if (typeof obj.__$destroyed === 'boolean') {
         return obj.__$destroyed;
       }
-      throw new Error(`Should explicitly have state for \`destroyed\``)
+      throw new Error('Should explicitly have state for `destroyed`');
     }
 
     const isValid = (() => {
@@ -72,6 +72,7 @@ module.exports = instance => ({
       return () => {
         const isNewInstance = obj.__$new;
         const saved = obj.__$saved;
+        const destroyed = obj.__$destroyed;
 
         if (isNewInstance) {
           throw new Error('Shouldn\'t destroy impersisted record');
@@ -79,6 +80,10 @@ module.exports = instance => ({
 
         if (!saved) {
           throw new Error('Shouldn\'t destroy unsaved(mutated) record');
+        }
+
+        if (destroyed) {
+          throw new Error('Shouldn\'t destroy already destroyed record');
         }
 
         const { sql, timestamp } = this.__generate_sql_delete_expression(obj);

@@ -17,7 +17,14 @@ const RecordConstructor = handler => (value, options = {}) => {
 
   return new Proxy(Object.assign(value, decorate), handler);
 };
-const RecordsConstructor = handler => value => new Proxy(value, handler);
+const RecordsConstructor = handler => (value, options = {}) => {
+  const decorate = {
+    __$destroyed: false,
+  };
+  if (options.destroyed) { decorate.__$destroyed = true }
+
+  return new Proxy(Object.assign(value, decorate), handler);
+};
 
 module.exports = class Model {
   /*
@@ -53,6 +60,7 @@ module.exports = class Model {
     this.__generate_sql_insert_expression = () => '';
     this.__generate_sql_update_expression = () => '';
     this.__generate_sql_delete_expression = () => '';
+    this.__generate_sql_batch_delete_expression = () => '';
     this.__define_sql_expression_methods();
 
     this.__has_many = [];
@@ -141,6 +149,18 @@ DELETE FROM ${this.__table_name}
 WHERE id = ${obj.id}`,
       };
     }
+
+    this.__generate_sql_batch_delete_expression = (records) => {
+      const now = Date.now();
+      const ids = records.map(({ id }) => id);
+
+      return {
+        timestamp: now,
+        sql: `
+DELETE FROM ${this.__table_name}
+WHERE id IN (${ids.join(', ')})`,
+      };
+    };
   }
 
   __build_table_if_not_exist() {

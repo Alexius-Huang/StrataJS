@@ -225,3 +225,22 @@ test('Record#destroy', t => {
   const noResult = $users.find(user.id);
   t.is(noResult, null);
 });
+
+test('Records#destroy', t => {
+  const users = [];
+  for (let i = 1; i <= 10; i += 1) {
+    const created = $users.create({ name: 'batch-destroy', account: `maxwell-${i}`, age: i * 3, married: false });
+    users.push(created);
+  }
+
+  t.is(users.length, 10);
+
+  const result = $users.where({ name: 'batch-destroy', age: { gt: 21 } }).evaluate();
+  t.is(result.length, 3);
+  t.is(result.destroyed, false);
+  result.destroy();
+  t.is(result.destroyed, true);
+
+  const afterDestroyed = $users.where({ name: 'batch-destroy' }).evaluate();
+  t.is(afterDestroyed.length, 7);
+});
