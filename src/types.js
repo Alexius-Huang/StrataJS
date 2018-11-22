@@ -6,36 +6,29 @@ class Type {
     this.comparable = typeof params.comparable === 'boolean' ? params.comparable : false;
   }
 
+  /* Private Fields */
   __parseSQL(value) {
     if (this.stringFormat) {
       return `'${value}'`;
     }
     return value;
   }
+  __output(input) {
+    return input === null ? null : this.output(input);
+  }
 
   validAssignment(value) {
     return typeof value === 'string';
-  }
-
-  strongValidAssignment(value) {
-    if (!this.validAssignment(value)) {
-      throw new Error(`Wrong type format when assigning into type \`${this.name}\``);
-    }
-    return true;
   }
 
   validSQLInput(value) {
     return typeof value === 'string'; 
   }
 
-  strongValidSQLInput(value) {
-    if (!this.validSQLInput(value)) {
-      throw new Error(`Wrong type format when assigning into type \`${this.name}\``);
-    }
-    return true;
+  output(input) {
+    return String(input);
   }
 
-  output(input) { return input === null ? null : String(input); }
   assign(value) {
     if (this.strongValidAssignment(value)) {
       return value;
@@ -61,7 +54,7 @@ class INTEGER extends Type {
   }
 
   output(input) {
-    return input === null ? null : Number(input);
+    return Number(input);
   }
 }
 
@@ -90,12 +83,13 @@ class TIMESTAMP extends Type {
   validAssignment(input) {
     return typeof input === 'number' && /^\+?(0|[1-9]\d*)$/.test(String(input));
   }
+
   validSQLInput(input) {
     return typeof input === 'number' && /^\+?(0|[1-9]\d*)$/.test(String(input));
   }
 
   output(input) {
-    return input === null ? null : Number(input);
+    return Number(input);
   }
 }
 
@@ -112,9 +106,6 @@ class BOOLEAN extends Type {
   }
 
   output(input) {
-    if (input === null) {
-      return null;
-    }
     return input === 1 ? true : false;
   }
 
@@ -154,7 +145,10 @@ class Enum extends Type {
     );
   }
 
-  output(input) { return input === null ? null : this.keys[input]; }
+  output(input) {
+    return this.keys[input];
+  }
+
   assign(value) {
     if (this.strongValidAssignment(value)) {
       return this.keys.indexOf(value);

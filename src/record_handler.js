@@ -121,7 +121,12 @@ module.exports = instance => ({
               }
 
               const type = this.__field_name_map_types[prop];
-              mutateAvailableObj[prop] = type.assign(value);
+
+              if (type.validAssignment(value)) {
+                mutateAvailableObj[prop] = type.assign(value);
+              } else {
+                throw new Error(`Wrong type format when assigning into column \`${prop}\` with type \`${type.name}\``);
+              }
               return true;
             }
 
@@ -192,7 +197,7 @@ module.exports = instance => ({
     /* Parse Correct Value According to Types */
     if (this.__field_names.includes(prop)) {
       const type = this.__field_name_map_types[prop];
-      return type.output(obj[prop]);
+      return type.__output(obj[prop]);
     }
 
     return obj[prop];
@@ -212,7 +217,11 @@ module.exports = instance => ({
 
       const type = this.__field_name_map_types[prop];
 
-      obj[prop] = type.assign(value);
+      if (type.validAssignment(value)) {
+        obj[prop] = type.assign(value);
+      } else {
+        throw new Error(`Wrong type format when assigning into column \`${prop}\` with type \`${type.name}\``)
+      }
       return true;
     }
 

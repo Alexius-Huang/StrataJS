@@ -58,7 +58,7 @@ module.exports = instance => ({
 
             if (this.__field_names.includes(prop)) {
               const type = this.__field_name_map_types[prop];
-              return type.output(sqlUpdateObj[prop]);
+              return type.__output(sqlUpdateObj[prop]);
             }
 
             throw new Error(`No column \`${prop}\` exists`);
@@ -76,7 +76,11 @@ module.exports = instance => ({
               }
 
               const type = this.__field_name_map_types[prop];
-              sqlUpdateObj[prop] = type.assign(value);
+              if (type.validAssignment(value)) {
+                sqlUpdateObj[prop] = type.assign(value);
+              } else {
+                throw new Error(`Wrong type format when assigning into column \`${prop}\` with type \`${type.name}\``);
+              }
               return true;
             }
 
@@ -137,7 +141,11 @@ module.exports = instance => ({
                 }
   
                 const type = this.__field_name_map_types[prop];
-                mutateAvailableObj[prop] = type.assign(value);
+                if (type.validAssignment(value)) {
+                  mutateAvailableObj[prop] = type.assign(value);
+                } else {
+                  throw new Error(`Wrong type format when assigning into column \`${prop}\` with type \`${type.name}\``);
+                }
                 return true;
               }
   

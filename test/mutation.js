@@ -73,28 +73,28 @@ test('Model#new', t => {
     user.name = 123;
     throw new Error('Test failed');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `string`');
+    t.is(err.message, 'Wrong type format when assigning into column `name` with type `string`');
   }
 
   try {
     user.age = '18';
     throw new Error('Test failed');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `integer`');
+    t.is(err.message, 'Wrong type format when assigning into column `age` with type `integer`');
   }
 
   try {
     user.married = 2;
     throw new Error('Test failed');
   } catch(err) {
-    t.is(err.message, 'Wrong type format when assigning into type `boolean`');
+    t.is(err.message, 'Wrong type format when assigning into column `married` with type `boolean`');
   }
 
   try {
     user.married = 0;
     throw new Error('Test failed');
   } catch(err) {
-    t.is(err.message, 'Wrong type format when assigning into type `boolean`');
+    t.is(err.message, 'Wrong type format when assigning into column `married` with type `boolean`');
   }
 
   user.name = 'Maximilian';
@@ -241,7 +241,7 @@ test('Record#mutate', t => {
     });
     throw new Error('Test failed');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `integer`');
+    t.is(err.message, 'Wrong type format when assigning into column `age` with type `integer`');
   }
 
   user.name = 'mutation-test-2';

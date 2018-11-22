@@ -38,7 +38,7 @@ test('Types.String', t => {
     $string.create({ content: 123 });
     throw new Error('Test failure');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `string`');
+    t.is(err.message, 'Wrong type format when assigning into column `content` with type `string`');
   }
 
   const queried = $string.find(result.id);
@@ -54,7 +54,7 @@ test('Types.String', t => {
     newString.content = 123;
     throw new Error('Test failure');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `string`');
+    t.is(err.message, 'Wrong type format when assigning into column `content` with type `string`');
   }
 
   try {
@@ -142,28 +142,28 @@ test('Types.Enum', t => {
     $enum.create({ state: 123 });
     throw new Error('Test failure');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `enum`');
+    t.is(err.message, 'Wrong type format when assigning into column `state` with type `enum`');
   }
 
   try {
     $enum.create({ state: 'unexisted-state' });
     throw new Error('Test failure');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `enum`');
+    t.is(err.message, 'Wrong type format when assigning into column `state` with type `enum`');
   }
   
   try {
     newEnum.state = 123;
     throw new Error('Test failure');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `enum`');
+    t.is(err.message, 'Wrong type format when assigning into column `state` with type `enum`');
   }
 
   try {
     newEnum.state = 'hello world';
     throw new Error('Test failure');
   } catch (err) {
-    t.is(err.message, 'Wrong type format when assigning into type `enum`');
+    t.is(err.message, 'Wrong type format when assigning into column `state` with type `enum`');
   }
 
   newEnum.state = 'state-1';
