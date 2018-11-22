@@ -155,13 +155,14 @@ module.exports = instance => ({
     
           mutation(mutateRecordProxy);
 
+          /* No need to update if not mutated */
+          if (!mutated) return true;
+
           this.__field_names.forEach((name) => {
             if (mutateRecordProxy[name] !== undefined) {
               record[name] = mutateRecordProxy[name];
             }
           });
-
-          if (!mutated) return true;
   
           const { sql, timestamp } = this.__generate_sql_update_expression(record);
           this.__db_connection.prepare(sql).run();

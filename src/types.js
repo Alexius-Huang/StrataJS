@@ -30,9 +30,7 @@ class Type {
   }
 
   assign(value) {
-    if (this.strongValidAssignment(value)) {
-      return value;
-    }
+    return value;
   }
 }
 
@@ -110,9 +108,7 @@ class BOOLEAN extends Type {
   }
 
   assign(value) {
-    if (this.strongValidAssignment(value)) {
-      return value === true ? 1 : 0;
-    }
+    return value === true ? 1 : 0;
   }
 }
 
@@ -150,9 +146,7 @@ class Enum extends Type {
   }
 
   assign(value) {
-    if (this.strongValidAssignment(value)) {
-      return this.keys.indexOf(value);
-    }
+    return this.keys.indexOf(value);
   }
 }
 
