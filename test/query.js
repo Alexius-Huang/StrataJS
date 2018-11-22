@@ -21,6 +21,10 @@ class Users extends Strata.Model {
       ]
     });
   }
+
+  getUserPosts(id) {
+    return this.find(id).posts.evaluate();
+  }
 }
 
 class Posts extends Strata.Model {
@@ -54,6 +58,18 @@ test.before(t => {
 
 test.after.always(async t => {
   await unlink('./local_test.sqlite3');
+});
+
+test('Custom model query method', t => {
+  const posts = $users.getUserPosts(1);
+  const expectedPosts = $users.find(1).posts.evaluate();
+
+  t.is(posts.length, expectedPosts.length);
+  for (let i = 0; i < posts.length; i += 1) {
+    const post = posts[i];
+    const expectedPost = expectedPosts[i];
+    t.deepEqual(post, expectedPost);
+  }
 });
 
 test('Model#all', t => {
