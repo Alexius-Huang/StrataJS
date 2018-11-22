@@ -224,18 +224,13 @@ CREATE TABLE IF NOT EXISTS ${this.__table_name} (
   }
 
   create(obj) {
-    const { sql, timestamp } = this.__generate_sql_insert_expression(obj);
-    const { lastInsertRowid: id } = this.__db_connection.prepare(sql).run();
-
-    return this.Record({
-      ...obj,
-      id,
-      created: timestamp,
-      updated: timestamp,
-    }, {
-      saved: true,
-      new: false,
+    const newRecord = this.new();
+    Object.keys(obj).forEach((key) => {
+      newRecord[key] = obj[key];
     });
+
+    newRecord.save();
+    return newRecord;
   }
 
   all() {

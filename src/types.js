@@ -125,6 +125,43 @@ class BOOLEAN extends Type {
   }
 }
 
+class Enum extends Type {
+  constructor(keys) {
+    super({
+      name: 'enum',
+      sqlType:'integer',
+      stringFormat: false,
+      comparable: false,
+    });
+
+    if ((new Set(keys)).size !== keys.length) {
+      throw new Error('Duplicated keys are not allowed');
+    }
+
+    this.keys = keys;
+  }
+
+  validAssignment(value) {
+    return this.keys.includes(value);
+  }
+
+  validSQLInput(value) {
+    return (
+      typeof value === 'number' &&
+      value % 1 === 0 &&
+      value < this.keys.length &&
+      value >= 0
+    );
+  }
+
+  output(input) { return input === null ? null : this.keys[input]; }
+  assign(value) {
+    if (this.strongValidAssignment(value)) {
+      return this.keys.indexOf(value);
+    }
+  }
+}
+
 module.exports = {
   Type,
   Types: {
@@ -133,5 +170,6 @@ module.exports = {
     Text: new TEXT(),
     Timestamp: new TIMESTAMP(),
     Boolean: new BOOLEAN(),
+    Enum: keys => new Enum(keys),
   },
 };

@@ -1,5 +1,8 @@
 /* Generates handler for records */
 module.exports = instance => ({
+  // construct: function (obj) {
+
+  // }.bind(instance),
   get: function (obj, prop) {
     if (prop === 'saved') {
       if (typeof obj.__$saved === 'boolean') {
@@ -196,6 +199,10 @@ module.exports = instance => ({
   }.bind(instance),
 
   set: function (obj, prop, value) {
+    if (['id', 'created', 'updated'].includes(prop)) {
+      throw new Error(`Cannot assign value to read-only field \`${prop}\``);
+    }
+
     if (obj.__$destroyed) {
       throw new Error('Record is read-only since it has been destroyed');
     }

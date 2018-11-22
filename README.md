@@ -143,7 +143,7 @@ If the type of the column when defined in model is specified `comparable`, for i
 
 ```js
 Strata.Types.Integer.comparable // true
-Strata.Types.String.comparable  // true
+Strata.Types.String.comparable  // false
 ```
 
 You can use compare operations in where clause:
