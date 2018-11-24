@@ -56,6 +56,22 @@ const User = new UserModel();
 const Post = new PostModel();
 ```
 
+### Strata Model Built-in Types
+
+#### `Strata.Type`
+
+#### `Strata.Types.Integer`
+
+#### `Strata.Types.String`
+
+#### `Strata.Types.Text`
+
+#### `Strata.Types.Timestamp`
+
+#### `Strata.Types.Boolean`
+
+#### `Strata.Types.Enum`
+
 ### Query
 
 #### `Strata.Model#find -> Record` Find Single Record
@@ -77,7 +93,7 @@ const query = User.where({ age: 18 });
 const result = query.evaluate();
 ```
 
-#### `Strata.Model#limit | Query#limit -> Query`
+#### `Strata.Model#limit | Query#limit -> Query` Limit Query Result
 
 Limit the record result number. Notice that the `Query` object also have `limit` method which means that the query is chainable:
 
@@ -91,11 +107,11 @@ const result1 = User.limit(5).evaluate();
 const result2 = User.where({ age: { gt: 18 } }).limit(5);
 ```
 
-#### `Strata.Model#first | Query#first -> Query`
+#### `Strata.Model#first | Query#first -> Query` Get First of Records
 
 Alias to `Strata.Model#limit` and `Query#limit`
 
-#### `Strata.Model#last | Query#last -> Query`
+#### `Strata.Model#last | Query#last -> Query` Get Last of Records
 
 Limit the record result number reversely. Notice that the `Query` object also have `last` method which means that the query is chainable:
 
@@ -109,7 +125,7 @@ const result1 = User.last(5).evaluate();
 const result2 = User.where({ age: { gt: 18 } }).last(5);
 ```
 
-#### `Strata.Model#where | Query#where -> Query`
+#### `Strata.Model#where | Query#where -> Query` Get Records Under Some Condition
 
 Query the record conditionally. Notice that the `Query` object also have `last` method which means that the query is chainable.
 
@@ -170,6 +186,77 @@ const result6 = User.where({ age: { gt: 12, lte: 18 } }).evaluate();
 /* Get users aged less than or equal to 12 OR greater than 18 */
 const result6 = User.where({ age: { lte: 12 } }).where({ age: { gt: 18 } }).evaluate();
 ```
+
+### Mutation
+
+#### `Strata.Model#new -> Record` Get New Record Instance
+
+Returns a new record instance which is mutable but havn't been saved yet. When commit to save the record, you need to call `Record#save` method, for instance:
+
+```js
+const user = User.new();
+
+user.name = 'Maxwell';
+user.account = 'maxwell123';
+user.age = 18;
+user.married = false;
+
+user.save();
+```
+
+Hint: You can also use `Record#saved` to check whether the record is saved in database:
+
+```js
+const user = User.new();
+console.log(user.saved); // => false
+
+user.name = 'Maxwell';
+...
+
+user.save();
+console.log(user.saved); // => true
+```
+
+#### `Strata.Model#create -> Record` Directly Create A Saved Record
+
+Shortcut for creating a new record instance and save it to the database. You need to specify the required column's matching value, for instance:
+
+```js
+const user = User.create({
+  name: 'Maxwell',
+  account: 'maxwell123',
+  age: 18,
+  married: false
+});
+
+console.log(user.saved); // true
+```
+
+#### `Record#mutate`
+
+#### `Record#destroy`
+
+#### `Records#mutate`
+
+#### `Records#mutateEach`
+
+#### `Records#destroy`
+
+### Record Status Checking
+
+#### `Record#saved`
+
+#### `Record#persisted`
+
+#### `Record#destroyed`
+
+#### `Records#destroyed`
+
+### Model Relationships
+
+#### `Strata.Model#hasMany`
+
+#### `Strata.Model#belongsTo`
 
 ## Planning Features
 
