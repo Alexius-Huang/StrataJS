@@ -4,17 +4,23 @@ class Type {
     this.sqlType = params.sqlType;
     this.stringFormat = typeof params.stringFormat === 'boolean' ? params.stringFormat : true;
     this.comparable = typeof params.comparable === 'boolean' ? params.comparable : false;
+
+    this.nullishValue = params.nullishValue !== undefined ? params.nullishValue : null;
   }
 
   /* Private Fields */
   __parseSQL(value) {
+    if (value === null) return 'NULL';
+
     if (this.stringFormat) {
       return `'${value}'`;
     }
     return value;
   }
-  __output(input) {
-    return input === null ? null : this.output(input);
+
+  __output(input, meta) {
+    const { nullishValue: n } = this;
+    return input === n ? n : this.output(input, meta);
   }
 
   validAssignment(value) {
@@ -112,6 +118,64 @@ class BOOLEAN extends Type {
   }
 }
 
+class EnumState {
+  constructor(states, currentState = null, meta = {}) {
+    this.__availableStates = states;
+    this.__record = meta.record;
+    this.__property = meta.property;
+    this.value = currentState;
+
+    states.forEach((state) => {
+      Object.defineProperty(this, state, {
+        get: () => state === this.value,
+        set: () => { throw new Error('State\'s transition status is read-only'); }
+      });
+    });
+  }
+
+  next(save = false) {
+    const {
+      value,
+      __availableStates: keys,
+      __record: record,
+      __property: prop
+    } = this;
+
+    if (value === null) {
+      throw new Error('Nullish state cannot be transitioned to the next state');
+    }
+
+    const index = keys.indexOf(value);
+    if (index + 1 === keys.length) {
+      throw new Error('Ending state cannot be transitioned to the next state');
+    }
+
+    record[prop] = keys[index + 1];
+    if (save) record.save();
+  }
+
+  previous(save = false) {
+    const {
+      value,
+      __availableStates: keys,
+      __record: record,
+      __property: prop
+    } = this;
+
+    if (value === null) {
+      throw new Error('Nullish state cannot be transitioned to the previous state');
+    }
+
+    const index = keys.indexOf(value);
+    if (index - 1 < 0) {
+      throw new Error('Starting state cannot be transitioned to the previous state');
+    }
+
+    record[prop] = keys[index - 1];
+    if (save) record.save();
+  }
+}
+
 class Enum extends Type {
   constructor(keys) {
     super({
@@ -119,6 +183,7 @@ class Enum extends Type {
       sqlType:'integer',
       stringFormat: false,
       comparable: false,
+      nullishValue: new EnumState(keys)
     });
 
     if ((new Set(keys)).size !== keys.length) {
@@ -141,8 +206,10 @@ class Enum extends Type {
     );
   }
 
-  output(input) {
-    return this.keys[input];
+  output(input, meta) {
+    const currentState = this.keys[input];
+    const { record, property } = meta;
+    return new EnumState(this.keys, currentState, { record, property });
   }
 
   assign(value) {

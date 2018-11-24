@@ -1,22 +1,22 @@
-const RecordHandler = require('./record_handler');
-const RecordConstructor = handler => (value, options = {}) => {
-  const decorate = {
-    __$saved: false,
-    __$new: false,
-    __$destroyed: false,
-  };
-  if (options.saved)     { decorate.__$saved     = true; }
-  if (options.new)       { decorate.__$new       = true; }
-  if (options.destroyed) { decorate.__$destroyed = true; }
+// const RecordHandler = require('./record_handler');
+// const RecordConstructor = handler => (value, options = {}) => {
+//   const decorate = {
+//     __$saved: false,
+//     __$new: false,
+//     __$destroyed: false,
+//   };
+//   if (options.saved)     { decorate.__$saved     = true; }
+//   if (options.new)       { decorate.__$new       = true; }
+//   if (options.destroyed) { decorate.__$destroyed = true; }
 
-  return new Proxy(Object.assign(value, decorate), handler);
-};
+//   return new Proxy(Object.assign(value, decorate), handler);
+// };
 
 module.exports = instance => ({
   set: function() {
     throw new Error('Records are read-only');
   },
-  get: function (obj, prop) {
+  get: function (obj, prop, receiver) {
     if (prop === 'destroyed') {
       if (typeof obj.__$destroyed === 'boolean') {
         return obj.__$destroyed;
@@ -58,7 +58,7 @@ module.exports = instance => ({
 
             if (this.__field_names.includes(prop)) {
               const type = this.__field_name_map_types[prop];
-              return type.__output(sqlUpdateObj[prop]);
+              return type.__output(sqlUpdateObj[prop], { record: receiver, property: prop });
             }
 
             throw new Error(`No column \`${prop}\` exists`);

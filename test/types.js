@@ -115,7 +115,7 @@ test('Types.String', t => {
 //   }
 // });
 
-test('Types.Enum', t => {
+test.only('Types.Enum', t => {
   class EnumTest extends Strata.Model {
     constructor() {
       super({
@@ -123,8 +123,12 @@ test('Types.Enum', t => {
         fields: [
           {
             name: 'state',
-            type: Types.Enum(['state-1', 'state-2', 'state-3']),
+            type: Types.Enum(['active', 'inactive', 'destroyed']),
             required: true,
+          },
+          {
+            name: 'anotherState',
+            type: Types.Enum(['active', 'inactive', 'expired']),
           },
         ]
       });
@@ -133,8 +137,8 @@ test('Types.Enum', t => {
 
   const $enum = new EnumTest();
 
-  const result = $enum.create({ state: 'state-1' });
-  t.is(result.state, 'state-1');
+  const result = $enum.create({ state: 'active' });
+  t.is(result.state.value, 'active');
 
   const newEnum = $enum.new();
 
@@ -166,7 +170,68 @@ test('Types.Enum', t => {
     t.is(err.message, 'Wrong type format when assigning into column `state` with type `enum`');
   }
 
-  newEnum.state = 'state-1';
+  newEnum.state = 'inactive';
   newEnum.save();
-  t.is(newEnum.state, 'state-1');
+
+  t.is(newEnum.state.value, 'inactive');
+  t.is(newEnum.anotherState.value, null);
+
+  newEnum.anotherState = 'expired';
+  newEnum.save();
+  t.is(newEnum.anotherState.value, 'expired');
+
+  t.is(newEnum.state.active, false);
+  t.is(newEnum.state.inactive, true);
+  t.is(newEnum.state.destroyed, false);
+  t.is(newEnum.anotherState.active, false);
+  t.is(newEnum.anotherState.inactive, false);
+  t.is(newEnum.anotherState.expired, true);
+
+  t.is(newEnum.saved, true);
+  newEnum.state.next();
+  t.is(newEnum.state.active, false);
+  t.is(newEnum.state.inactive, false);
+  t.is(newEnum.state.destroyed, true);
+  t.is(newEnum.saved, false);
+  newEnum.save();
+  t.is(newEnum.state.active, false);
+  t.is(newEnum.state.inactive, false);
+  t.is(newEnum.state.destroyed, true);
+  t.is(newEnum.saved, true);
+
+  newEnum.anotherState.previous();
+  t.is(newEnum.anotherState.active, false);
+  t.is(newEnum.anotherState.inactive, true);
+  t.is(newEnum.anotherState.expired, false);
+  t.is(newEnum.saved, false);
+  newEnum.save();
+  t.is(newEnum.anotherState.active, false);
+  t.is(newEnum.anotherState.inactive, true);
+  t.is(newEnum.anotherState.expired, false);
+  t.is(newEnum.saved, true);
+
+  try {
+    newEnum.state.next();
+    throw new Error('Test failure');
+  } catch (err) {
+    t.is(err.message, 'Ending state cannot be transitioned to the next state');
+  }
+
+  newEnum.state.previous(true);
+  t.is(newEnum.saved, true);
+  t.is(newEnum.state.active, false);
+  t.is(newEnum.state.inactive, true);
+  t.is(newEnum.state.destroyed, false);
+  newEnum.state.previous(true);
+  t.is(newEnum.saved, true);
+  t.is(newEnum.state.active, true);
+  t.is(newEnum.state.inactive, false);
+  t.is(newEnum.state.destroyed, false);
+
+  try {
+    newEnum.state.previous(true);
+    throw new Error('Test failure');
+  } catch (err) {
+    t.is(err.message, 'Starting state cannot be transitioned to the previous state');
+  }
 });

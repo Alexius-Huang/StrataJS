@@ -5,7 +5,7 @@ const RecordHandler = require('./record_handler');
 const RecordsHandler = require('./records_handler');
 const Query = require('./query');
 
-const RecordConstructor = handler => (value, options = {}) => {
+const RecordConstructor = handler => function (value, options = {}) {
   const decorate = {
     __$saved: false,
     __$new: false,

@@ -3,7 +3,7 @@ module.exports = instance => ({
   // construct: function (obj) {
 
   // }.bind(instance),
-  get: function (obj, prop) {
+  get: function (obj, prop, receiver) {
     if (prop === 'saved') {
       if (typeof obj.__$saved === 'boolean') {
         return obj.__$saved;
@@ -197,7 +197,7 @@ module.exports = instance => ({
     /* Parse Correct Value According to Types */
     if (this.__field_names.includes(prop)) {
       const type = this.__field_name_map_types[prop];
-      return type.__output(obj[prop]);
+      return type.__output(obj[prop], { record: receiver, property: prop });
     }
 
     return obj[prop];
