@@ -2,7 +2,6 @@ import test from 'ava';
 import Strata from '../strata';
 import fs from 'fs';
 import { promisify } from 'util';
-import { isIterable } from 'core-js';
 
 const unlink = promisify(fs.unlink);
 

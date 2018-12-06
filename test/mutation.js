@@ -170,8 +170,8 @@ test('Record#save', t => {
   t.is(u.persisted, true);
 
   u.name ='Maxims Alexius';
-  const beforeCreateTime = u.created;
-  const beforeUpdateTime = u.updated;
+  const beforeCreateTime = u.created.getTime();
+  const beforeUpdateTime = u.updated.getTime();
   t.is(u.saved, false);
   t.is(u.persisted, true);
 
@@ -179,8 +179,8 @@ test('Record#save', t => {
   t.is(u.saved, true);
   t.is(u.persisted, true);
 
-  const afterCreateTime = u.created;
-  const afterUpdateTime = u.updated;
+  const afterCreateTime = u.created.getTime();
+  const afterUpdateTime = u.updated.getTime();
   t.is(beforeCreateTime, afterCreateTime);
   t.not(beforeUpdateTime, afterUpdateTime);
 });
@@ -196,7 +196,7 @@ test('Record#mutate', t => {
   t.is(user.persisted, true);
   t.is(user.saved, true);
 
-  const beforeUpdateTime = user.updated;
+  const beforeUpdateTime = user.updated.getTime();
 
   user.mutate((u) => {
     u.name = 'mutation-test-modified';
@@ -208,17 +208,17 @@ test('Record#mutate', t => {
   t.is(user.name, 'mutation-test-modified');
   t.is(user.married, true);
 
-  const afterUpdateTime = user.updated;
+  const afterUpdateTime = user.updated.getTime();
   t.is(user.saved, true);
   t.not(beforeUpdateTime, afterUpdateTime);
 
   const queried = $users.find(user.id);
-  t.is(queried.updated, user.updated);
+  t.is(queried.updated.getTime(), user.updated.getTime());
   t.is(queried.name, 'mutation-test-modified');
 
   try {
     user.mutate((u) => {
-      t.is(u.created, user.created);
+      t.is(u.created.getTime(), user.created.getTime());
       u.created = 123;
     });
     throw new Error('Test failed');
@@ -266,14 +266,14 @@ test('Records#mutate', t => {
 
   const result = $users.where({ name: 'batch-mutation', age: { gt: 18 } }).evaluate();
   t.is(result.length, 4);
-  const beforeUpdateTime = result[0].updated;
+  const beforeUpdateTime = result[0].updated.getTime();
 
   result.mutate((u) => {
     u.name = 'batch-mutation-modified';
     u.married = true;
   });
 
-  const afterUpdateTime = result[0].updated;
+  const afterUpdateTime = result[0].updated.getTime();
   t.not(beforeUpdateTime, afterUpdateTime);
   t.is(result[0].name, 'batch-mutation-modified');
   t.is(result[0].married, true);
@@ -292,8 +292,8 @@ test('Records#mutateEach', t => {
 
   const result = $users.where({ name: 'batch-each-mutation' }).evaluate();
 
-  const notMutatedBeforeUpdateTime = result[0].updated;
-  const mutatedBeforeUpdateTime = result[5].updated;
+  const notMutatedBeforeUpdateTime = result[0].updated.getTime();
+  const mutatedBeforeUpdateTime = result[5].updated.getTime();
 
   result.mutateEach((u) => {
     if (u.age >= 18) {
@@ -301,8 +301,8 @@ test('Records#mutateEach', t => {
     }
   });
 
-  const notMutatedAfterUpdateTime = result[0].updated;
-  const mutatedAfterUpdateTime = result[5].updated;
+  const notMutatedAfterUpdateTime = result[0].updated.getTime();
+  const mutatedAfterUpdateTime = result[5].updated.getTime();
   t.is(notMutatedBeforeUpdateTime, notMutatedAfterUpdateTime);
   t.not(mutatedBeforeUpdateTime, mutatedAfterUpdateTime);
 

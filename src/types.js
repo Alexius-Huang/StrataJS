@@ -93,7 +93,7 @@ class TIMESTAMP extends Type {
   }
 
   output(input) {
-    return Number(input);
+    return new Date(input);
   }
 }
 

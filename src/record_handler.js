@@ -1,3 +1,20 @@
+const checkIsValid = (obj, instance) => {
+  for (let i = 0; i < instance.__field_names.length; i += 1) {
+    const name = instance.__field_names[i];
+    const type = instance.__field_name_map_types[name];
+    const required = instance.__field_name_map_required[name];
+    const value = obj[name];
+
+    /* Skip validation if value is specifically null and not required */
+    if (!required && value === null) continue;
+
+    if (required && value === null) return false;
+    if (!type.validSQLInput(value)) return false;
+  }
+
+  return true;
+};
+
 /* Generates handler for records */
 module.exports = instance => ({
   // construct: function (obj) {
@@ -25,24 +42,7 @@ module.exports = instance => ({
       throw new Error('Should explicitly have state for `destroyed`');
     }
 
-    const checkIsValid = () => {
-      for (let i = 0; i < this.__field_names.length; i += 1) {
-        const name = this.__field_names[i];
-        const type = this.__field_name_map_types[name];
-        const required = this.__field_name_map_required[name];
-        const value = obj[name];
-
-        /* Skip validation if value is specifically null and not required */
-        if (!required && value === null) continue;
-
-        if (required && value === null) return false;
-        if (!type.validSQLInput(value)) return false;
-      }
-
-      return true;
-    };
-
-    const isValid = checkIsValid();
+    const isValid = checkIsValid(obj, this);
 
     if (prop === 'valid') return isValid;
 
@@ -197,6 +197,11 @@ module.exports = instance => ({
     /* Parse Correct Value According to Types */
     if (this.__field_names.includes(prop)) {
       const type = this.__field_name_map_types[prop];
+      return type.__output(obj[prop], { record: receiver, property: prop });
+    }
+
+    if (this.__conventional_field_names.includes(prop)) {
+      const type = this.__conventional_field_name_map_types[prop];
       return type.__output(obj[prop], { record: receiver, property: prop });
     }
 

@@ -4,6 +4,7 @@ const config = require('./config');
 const RecordHandler = require('./record_handler');
 const RecordsHandler = require('./records_handler');
 const Query = require('./query');
+const { Types } = require('./types');
 
 const RecordConstructor = handler => function (value, options = {}) {
   const decorate = {
@@ -53,6 +54,17 @@ module.exports = class Model {
         [name]: typeof required === 'boolean' ? required : false,
       }),
       {}
+    );
+
+    this.__conventional_fields = [
+      { name: 'id', type: Types.Integer },
+      { name: 'created', type: Types.Timestamp },
+      { name: 'updated', type: Types.Timestamp },
+    ];
+
+    this.__conventional_field_names = this.__conventional_fields.map(({ name }) => name);
+    this.__conventional_field_name_map_types = this.__conventional_fields.reduce(
+      (acc, { name, type }) => Object.assign(acc, { [name]: type }), {}
     );
 
     this.__build_table_if_not_exist();
